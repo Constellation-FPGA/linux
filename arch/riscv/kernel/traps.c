@@ -179,6 +179,29 @@ asmlinkage __visible __trap_section void do_trap_insn_illegal(struct pt_regs *re
 	}
 }
 
+asmlinkage __visible __trap_section void do_trap_floating_point(struct pt_regs *regs)
+{
+	bool handled;
+
+	if (user_mode(regs)) {
+		irqentry_enter_from_user_mode(regs);
+
+		local_irq_enable();
+
+		handled = riscv_v_first_use_handler(regs);
+
+		local_irq_disable();
+
+		if (!handled)
+			do_trap_error(regs, SIGILL, ILL_ILLOPC, regs->epc,
+				      "Oops - floating-point exception");
+
+		irqentry_exit_to_user_mode(regs);
+	} else {
+    die(regs, "Kernel caused FP exception. Should be impossible!");
+	}
+}
+
 DO_ERROR_INFO(do_trap_load_fault,
 	SIGSEGV, SEGV_ACCERR, "load access fault");
 #ifndef CONFIG_RISCV_M_MODE

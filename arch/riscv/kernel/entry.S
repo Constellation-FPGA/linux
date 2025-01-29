@@ -342,6 +342,18 @@ SYM_CODE_START(excp_vect_table)
 	RISCV_PTR do_page_fault   /* load page fault */
 	RISCV_PTR do_trap_unknown
 	RISCV_PTR do_page_fault   /* store page fault */
+	/* Our FP Exception has cause 0x18 = 24. We blank out the table for the
+	 * standards-defined reserved exceptions, and then install our custom handler
+	 * for use at the right location. */
+	RISCV_PTR do_trap_unknown
+	RISCV_PTR do_trap_unknown
+	RISCV_PTR do_trap_unknown
+	RISCV_PTR do_trap_unknown
+	RISCV_PTR do_trap_unknown
+	RISCV_PTR do_trap_unknown
+	RISCV_PTR do_trap_unknown
+	RISCV_PTR do_trap_unknown
+	RISCV_PTR do_trap_floating_point
 excp_vect_table_end:
 SYM_CODE_END(excp_vect_table)
 
