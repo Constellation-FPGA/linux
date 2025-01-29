@@ -106,6 +106,7 @@
 #define EXC_LOAD_GUEST_PAGE_FAULT	21
 #define EXC_VIRTUAL_INST_FAULT		22
 #define EXC_STORE_GUEST_PAGE_FAULT	23
+#define EXC_FLOATING_POINT_FAULT 24
 
 /* PMP configuration */
 #define PMP_R			0x01
