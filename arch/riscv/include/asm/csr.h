@@ -447,6 +447,10 @@
 
 #endif /* !CONFIG_RISCV_M_MODE */
 
+/* Floating-Point Exceptions CSRs */
+#define CSR_FFLAGS_CARE 0x880
+#define FFLAGS_CLEAR 0x1F
+
 /* IE/IP (Supervisor/Machine Interrupt Enable/Pending) flags */
 #define IE_SIE		(_AC(0x1, UL) << RV_IRQ_SOFT)
 #define IE_TIE		(_AC(0x1, UL) << RV_IRQ_TIMER)
