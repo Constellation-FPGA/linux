@@ -51,6 +51,8 @@ struct pt_regs {
 	unsigned long cause;
 	/* a0 value before the syscall */
 	unsigned long orig_a0;
+	/* Floating-point Care register before syscall */
+	unsigned long fflags_care;
 };
 
 #define PTRACE_SYSEMU			0x1f
