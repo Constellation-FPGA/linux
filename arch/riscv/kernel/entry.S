@@ -66,6 +66,12 @@ _save_context:
 	REG_S s4, PT_CAUSE(sp)
 	REG_S s5, PT_TP(sp)
 
+	/* Save the fflags_care register of this program and clear the
+	 * fflags_care register while inside the kernel. */
+	li t0, FFLAGS_CLEAR
+	csrrc s5, CSR_FFLAGS_CARE, t0
+	REG_S s5, PT_FFLAGS_CARE(sp)
+
 	/*
 	 * Set the scratch register to 0, so that if a recursive exception
 	 * occurs, the exception vector knows it came from the kernel
@@ -152,6 +158,14 @@ SYM_CODE_START_NOALIGN(ret_from_exception)
 
 	csrw CSR_STATUS, a0
 	csrw CSR_EPC, a2
+
+  /* Restore the fflags_care register after handler based on contents of pt_reg.
+   * NOTE: The particular value we write may be different than what we saved in
+   * handle_exception because the user modified pt_regs through ucontext.
+   * FPSpy uses this to disable FP exceptions for a single cycle while a
+   * breakpoint is inserted to allow the instruction to "replay". */
+  REG_L x1,  PT_FFLAGS_CARE(sp)
+  csrw  CSR_FFLAGS_CARE, x1
 
 	REG_L x1,  PT_RA(sp)
 	REG_L x3,  PT_GP(sp)
