@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: GPL-2.0
+menu "Firesim custom drivers"
+
+config FIRESIM_MODULES
+  bool "Custom \"device drivers\" for Firesim"
+  default y
+  help
+    The Linux built by Firemarshal for Firesim is a very minimal one. In
+    particular, the booted system in Firesim does not have the necessary tools
+    to compile modules out-of-tree.
+    Enable this to build all "device drivers" into the kernel.
