@@ -193,7 +193,7 @@ asmlinkage __visible __trap_section void do_trap_floating_point(struct pt_regs *
 		local_irq_disable();
 
 		if (!handled)
-			do_trap_error(regs, SIGILL, ILL_ILLOPC, regs->epc,
+			do_trap_error(regs, SIGFPE, FPE_FLTUNK, regs->epc,
 				      "Oops - floating-point exception");
 
 		irqentry_exit_to_user_mode(regs);
