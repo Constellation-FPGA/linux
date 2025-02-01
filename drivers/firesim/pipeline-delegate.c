@@ -41,8 +41,14 @@ static int major_device_number;
  * Note that the struct is limited to a maximum of 16KiB (14 address bits) */
 #define IOCTL_MAGIC 'F'
 
+struct delegate_config_t {
+  unsigned int  en_flag;
+  unsigned long trap_mask;
+};
+
 #define PIPELINED_DELEGATE_HELLO_WORLD _IO(IOCTL_MAGIC, 0x30)
 #define PIPELINED_DELEGATE_INSTALL_HANDLER_TARGET _IOR(IOCTL_MAGIC, 0x31, unsigned long)
+#define PIPELINED_DELEGATE_DELEGATE_TRAPS _IOR(IOCTL_MAGIC, 0x32, struct delegate_config_t*)
 
 /** Change the RWX bits of the /dev file created by the device_create call in
  * create_char_devs. */
@@ -83,6 +89,20 @@ static long pipelined_delegate_ioctl(struct file *filep, unsigned int cmd, unsig
   case PIPELINED_DELEGATE_INSTALL_HANDLER_TARGET: {
     unsigned long target_addr = args;
     pr_info("Setting handler target to addr 0x%lX\n", target_addr);
+    ret = 0;
+    break;
+  }
+  case PIPELINED_DELEGATE_DELEGATE_TRAPS: {
+    struct delegate_config_t trap_setup;
+    ret = copy_from_user(&trap_setup, (struct delegate_config_t*) args,
+                         sizeof(struct delegate_config_t));
+    if (ret) {
+      pr_alert("Huh? Only copied %ld bytes from user-space... weird\n", ret);
+      break;
+    }
+
+    pr_info("Enable/Disable: %s\n", trap_setup.en_flag == 1 ? "Enable" : "Disable");
+    pr_info("Trap Delegation Mask: 0x%lX\n", trap_setup.trap_mask);
     ret = 0;
     break;
   }
