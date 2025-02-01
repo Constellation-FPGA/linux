@@ -28,6 +28,21 @@ static struct pipeline_delegate_char_device_data {
 static struct class *pipeline_delegate_dev_class;
 static int major_device_number;
 
+/* The magic 'F' has MANY drivers. Some other sequence numbers (the second param)
+ * are taken. I use between 0x30 and 0x80 to give myself room to experiment.
+ * To define a new ioctl number, I recommend you use one of the 4 macros below:
+ * _IO(magic, number) - No inputs/outputs
+ * _IOR(magic, number, input_data_type) - ioctl with input
+ * _IOW(magic, number, output_data_type) - ioctl with output
+ * _IORW(magic, number, in_out_data_type) - ioctl with input and output
+ * ALL ioctls THAT TAKE DATATYPE PARAMETERS ONLY TAKE THE PARAMETER!!
+ * i.e. _IOR(magic, number, struct struct_name), NOT
+ *      _IOR(magic, number, sizeof(struct struct_name)).
+ * Note that the struct is limited to a maximum of 16KiB (14 address bits) */
+#define IOCTL_MAGIC 'F'
+
+#define PIPELINED_DELEGATE_HELLO_WORLD _IO(IOCTL_MAGIC, 0x30)
+
 /** Change the RWX bits of the /dev file created by the device_create call in
  * create_char_devs. */
 static int pipeline_delegate_uevent(const struct device *dev, struct kobj_uevent_env *env)
@@ -54,10 +69,29 @@ static int pipelined_delegate_release(struct inode *inode, struct file *filep) {
   return 0;
 }
 
+static long pipelined_delegate_ioctl(struct file *filep, unsigned int cmd, unsigned long args)
+{
+  /* struct pipelined_delegate_private_data *priv = filep->private_data; */
+
+  long ret = -ENOTTY;
+  switch(cmd) {
+  case PIPELINED_DELEGATE_HELLO_WORLD:
+    pr_info("HELLO WORLD!\n");
+    ret = 0;
+    break;
+  default:
+    pr_alert("Received unsupported ioctl: 0x%x\n", cmd);
+    ret = -ENOTTY;
+    break;
+  }
+  return ret;
+}
+
 static struct file_operations fops = {
   .owner = THIS_MODULE,
   .open = pipelined_delegate_open,
   .release = pipelined_delegate_release,
+  .unlocked_ioctl = pipelined_delegate_ioctl,
 };
 
 int create_char_devs(void)
