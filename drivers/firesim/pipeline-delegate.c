@@ -42,6 +42,7 @@ static int major_device_number;
 #define IOCTL_MAGIC 'F'
 
 #define PIPELINED_DELEGATE_HELLO_WORLD _IO(IOCTL_MAGIC, 0x30)
+#define PIPELINED_DELEGATE_INSTALL_HANDLER_TARGET _IOR(IOCTL_MAGIC, 0x31, unsigned long)
 
 /** Change the RWX bits of the /dev file created by the device_create call in
  * create_char_devs. */
@@ -79,6 +80,12 @@ static long pipelined_delegate_ioctl(struct file *filep, unsigned int cmd, unsig
     pr_info("HELLO WORLD!\n");
     ret = 0;
     break;
+  case PIPELINED_DELEGATE_INSTALL_HANDLER_TARGET: {
+    unsigned long target_addr = args;
+    pr_info("Setting handler target to addr 0x%lX\n", target_addr);
+    ret = 0;
+    break;
+  }
   default:
     pr_alert("Received unsupported ioctl: 0x%x\n", cmd);
     ret = -ENOTTY;
