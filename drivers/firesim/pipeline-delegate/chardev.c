@@ -1,20 +1,13 @@
-#define pr_fmt(fmt) "pipelined-delegate:" KBUILD_MODNAME ": " fmt
+#include "config.h"
+#include "ioctl.h"
+#include "chardev.h"
 
 #include <linux/cpu.h>
 #include <linux/kernel.h>
-#include <linux/fs.h>
 #include <linux/cdev.h>
-#include <linux/moduleparam.h>
+#include <linux/fs.h>
 
-#include <asm/io.h>
-#include <asm/ptrace.h>
-
-#undef MODULE_PARAM_PREFIX
-#define MODULE_PARAM_PREFIX "pipeline-delegate."
-#define MODULE_NAME "pipelined-delegate"
-
-#define DEVICE_NAME "pipelined-delegate"
-#define BUF_LEN 100 // Length of buffer in bytes.
+#define DEVICE_NAME MODULE_NAME
 
 #define MAX_MINOR_DEVICES 1
 
@@ -28,28 +21,6 @@ static struct pipeline_delegate_char_device_data {
 static struct class *pipeline_delegate_dev_class;
 static int major_device_number;
 
-/* The magic 'F' has MANY drivers. Some other sequence numbers (the second param)
- * are taken. I use between 0x30 and 0x80 to give myself room to experiment.
- * To define a new ioctl number, I recommend you use one of the 4 macros below:
- * _IO(magic, number) - No inputs/outputs
- * _IOR(magic, number, input_data_type) - ioctl with input
- * _IOW(magic, number, output_data_type) - ioctl with output
- * _IORW(magic, number, in_out_data_type) - ioctl with input and output
- * ALL ioctls THAT TAKE DATATYPE PARAMETERS ONLY TAKE THE PARAMETER!!
- * i.e. _IOR(magic, number, struct struct_name), NOT
- *      _IOR(magic, number, sizeof(struct struct_name)).
- * Note that the struct is limited to a maximum of 16KiB (14 address bits) */
-#define IOCTL_MAGIC 'F'
-
-struct delegate_config_t {
-  unsigned int  en_flag;
-  unsigned long trap_mask;
-};
-
-#define PIPELINED_DELEGATE_HELLO_WORLD _IO(IOCTL_MAGIC, 0x30)
-#define PIPELINED_DELEGATE_INSTALL_HANDLER_TARGET _IOR(IOCTL_MAGIC, 0x31, unsigned long)
-#define PIPELINED_DELEGATE_DELEGATE_TRAPS _IOR(IOCTL_MAGIC, 0x32, struct delegate_config_t*)
-
 /** Change the RWX bits of the /dev file created by the device_create call in
  * create_char_devs. */
 static int pipeline_delegate_uevent(const struct device *dev, struct kobj_uevent_env *env)
@@ -62,7 +33,8 @@ static int pipeline_delegate_uevent(const struct device *dev, struct kobj_uevent
  * set everything up for the file to be used. This means bringing the seek pointer
  * to a certain file, setting up device minor numbers, allocating memory space
  * for the device file's private information, and so on. */
-static int pipelined_delegate_open(struct inode *inode, struct file *filep) {
+static int pipelined_delegate_open(struct inode *inode, struct file *filep)
+{
   pr_info("Opened the pipelined delegation character device file\n");
   return 0;
 }
@@ -71,7 +43,8 @@ static int pipelined_delegate_open(struct inode *inode, struct file *filep) {
  * clean everything up when this instance of the file being opened is closed.
  * This will involve kfree-ing everything that was allocated in the open
  * function. */
-static int pipelined_delegate_release(struct inode *inode, struct file *filep) {
+static int pipelined_delegate_release(struct inode *inode, struct file *filep)
+{
   pr_info("Closed the pipelined delegation character device file\n");
   return 0;
 }
@@ -88,8 +61,7 @@ static long pipelined_delegate_ioctl(struct file *filep, unsigned int cmd, unsig
     break;
   case PIPELINED_DELEGATE_INSTALL_HANDLER_TARGET: {
     unsigned long target_addr = args;
-    pr_info("Setting handler target to addr 0x%lX\n", target_addr);
-    ret = 0;
+    ret = ioctl_install_handler_address(target_addr);
     break;
   }
   case PIPELINED_DELEGATE_DELEGATE_TRAPS: {
@@ -101,9 +73,7 @@ static long pipelined_delegate_ioctl(struct file *filep, unsigned int cmd, unsig
       break;
     }
 
-    pr_info("Enable/Disable: %s\n", trap_setup.en_flag == 1 ? "Enable" : "Disable");
-    pr_info("Trap Delegation Mask: 0x%lX\n", trap_setup.trap_mask);
-    ret = 0;
+    ret = ioctl_delegate_traps(trap_setup);
     break;
   }
   default:
@@ -188,35 +158,9 @@ int destroy_char_devs(void)
   pr_debug("Unregistering and Destroying character device class\n");
   class_destroy(pipeline_delegate_dev_class);
 
-  pr_debug("Unregistering and destroying %d character devices with major number %d region\n", MAX_MINOR_DEVICES, major_device_number);
+  pr_debug("Unregistering and destroying %d character devices with major number %d region\n",
+           MAX_MINOR_DEVICES, major_device_number);
   unregister_chrdev_region(MKDEV(major_device_number, 0), MAX_MINOR_DEVICES);
 
   return 0;
 }
-
-static int __init pipeline_delegate_init(void)
-{
-  pr_info("Starting Pipelined Delegation module\n");
-
-  int rc = 0;
-
-  rc = create_char_devs();
-
-  struct pt_regs *regs = task_pt_regs(current);
-  pr_info("a0: 0x" REG_FMT "\n", regs->a0);
-
-  return 0;
-}
-
-static void __exit pipeline_delegate_exit(void)
-{
-  pr_info("Stopping Pipelined Delegation module\n");
-  int rc = 0;
-  rc = destroy_char_devs();
-}
-
-module_init(pipeline_delegate_init);
-module_exit(pipeline_delegate_exit);
-MODULE_VERSION("0.0");
-MODULE_DESCRIPTION("Work with Pipelined Delegation");
-MODULE_LICENSE("UNKNOWN");

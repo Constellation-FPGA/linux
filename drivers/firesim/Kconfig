@@ -8,4 +8,6 @@ config FIRESIM_MODULES
     The Linux built by Firemarshal for Firesim is a very minimal one. In
     particular, the booted system in Firesim does not have the necessary tools
     to compile modules out-of-tree.
-    Enable this to build all "device drivers" into the kernel.
+    Enable this to build all custom modules "device drivers" into the kernel.
+
+source "pipeline-delegate/Kconfig"

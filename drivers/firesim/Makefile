@@ -1,1 +1,1 @@
-obj-y += pipeline-delegate.o
+obj-y += pipeline-delegate/
