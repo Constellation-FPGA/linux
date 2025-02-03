@@ -6,6 +6,7 @@
 #include <linux/moduleparam.h>
 
 #include <asm/io.h>
+#include <asm/csr.h>
 #include <asm/ptrace.h>
 
 static int __init pipeline_delegate_init(void)
@@ -19,12 +20,26 @@ static int __init pipeline_delegate_init(void)
   struct pt_regs *regs = task_pt_regs(current);
   pr_info("a0: 0x" REG_FMT "\n", regs->a0);
 
+  pr_info("SSTATUS: " REG_FMT "\n", csr_read(CSR_SSTATUS));
+  pr_info("STARGET: " REG_FMT "\n", csr_read(CSR_STARGET));
+  pr_info("SEDELEG: " REG_FMT "\n", csr_read(CSR_SEDELEG));
+  pr_info("SIDELEG: " REG_FMT "\n", csr_read(CSR_SIDELEG));
+
   return 0;
 }
 
 static void __exit pipeline_delegate_exit(void)
 {
   pr_info("Stopping Pipelined Delegation module\n");
+
+  pr_info("Clearing all pipelined delegation CSRs to return to default behavior\n");
+  csr_set(CSR_STARGET, 0);
+  csr_set(CSR_SEDELEG, 0);
+  csr_set(CSR_SIDELEG, 0);
+  pr_info("STARGET: " REG_FMT "\n", csr_read(CSR_STARGET));
+  pr_info("SEDELEG: " REG_FMT "\n", csr_read(CSR_SEDELEG));
+  pr_info("SIDELEG: " REG_FMT "\n", csr_read(CSR_SIDELEG));
+
   int rc = 0;
   rc = destroy_char_devs();
 }
