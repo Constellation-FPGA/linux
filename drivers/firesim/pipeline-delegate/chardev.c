@@ -76,6 +76,9 @@ static long pipelined_delegate_ioctl(struct file *filep, unsigned int cmd, unsig
     ret = ioctl_delegate_traps(trap_setup);
     break;
   }
+  case PIPELINED_DELEGATE_CSR_STATUS:
+    ret = ioctl_csr_status();
+    break;
   default:
     pr_alert("Received unsupported ioctl: 0x%x\n", cmd);
     ret = -ENOTTY;

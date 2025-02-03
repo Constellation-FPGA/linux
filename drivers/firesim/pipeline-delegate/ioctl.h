@@ -22,8 +22,10 @@ struct delegate_config_t {
 #define PIPELINED_DELEGATE_HELLO_WORLD _IO(IOCTL_MAGIC, 0x30)
 #define PIPELINED_DELEGATE_INSTALL_HANDLER_TARGET _IOR(IOCTL_MAGIC, 0x31, unsigned long)
 #define PIPELINED_DELEGATE_DELEGATE_TRAPS _IOR(IOCTL_MAGIC, 0x32, struct delegate_config_t*)
+#define PIPELINED_DELEGATE_CSR_STATUS _IO(IOCTL_MAGIC, 0x33)
 
 int ioctl_install_handler_address(unsigned long target_addr);
 int ioctl_delegate_traps(struct delegate_config_t trap_setup);
+int ioctl_csr_status(void);
 
 #endif /* PIPELINED_DELEGATE_IOCTL_H */
