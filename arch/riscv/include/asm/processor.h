@@ -82,6 +82,10 @@ struct thread_struct {
 	unsigned long bad_cause;
 	unsigned long vstate_ctrl;
 	struct __riscv_v_ext_state vstate;
+	/* Pipelined Exceptions */
+	unsigned long starget;
+	unsigned long sedeleg;
+	unsigned long sideleg;
 };
 
 /* Whitelist the fstate from the task_struct for hardened usercopy */

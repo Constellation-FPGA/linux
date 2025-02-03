@@ -38,6 +38,9 @@ void asm_offsets(void)
 	OFFSET(TASK_TI_PREEMPT_COUNT, task_struct, thread_info.preempt_count);
 	OFFSET(TASK_TI_KERNEL_SP, task_struct, thread_info.kernel_sp);
 	OFFSET(TASK_TI_USER_SP, task_struct, thread_info.user_sp);
+	OFFSET(TASK_THREAD_STARGET, task_struct, thread.starget);
+	OFFSET(TASK_THREAD_SEDELEG, task_struct, thread.sedeleg);
+	OFFSET(TASK_THREAD_SIDELEG, task_struct, thread.sideleg);
 
 	OFFSET(TASK_THREAD_F0,  task_struct, thread.fstate.f[0]);
 	OFFSET(TASK_THREAD_F1,  task_struct, thread.fstate.f[1]);
@@ -115,6 +118,9 @@ void asm_offsets(void)
 	OFFSET(PT_BADADDR, pt_regs, badaddr);
 	OFFSET(PT_CAUSE, pt_regs, cause);
 	OFFSET(PT_FFLAGS_CARE, pt_regs, fflags_care);
+	OFFSET(PT_STARGET, pt_regs, starget);
+	OFFSET(PT_SEDELEG, pt_regs, sedeleg);
+	OFFSET(PT_SIDELEG, pt_regs, sideleg);
 
 	OFFSET(SUSPEND_CONTEXT_REGS, suspend_context, regs);
 
@@ -335,6 +341,18 @@ void asm_offsets(void)
 	);
 	DEFINE(TASK_THREAD_S11_RA,
 		  offsetof(struct task_struct, thread.s[11])
+		- offsetof(struct task_struct, thread.ra)
+	);
+	DEFINE(TASK_THREAD_STARGET_RA,
+		  offsetof(struct task_struct, thread.starget)
+		- offsetof(struct task_struct, thread.ra)
+	);
+	DEFINE(TASK_THREAD_SEDELEG_RA,
+		  offsetof(struct task_struct, thread.sedeleg)
+		- offsetof(struct task_struct, thread.ra)
+	);
+	DEFINE(TASK_THREAD_SIDELEG_RA,
+		  offsetof(struct task_struct, thread.sideleg)
 		- offsetof(struct task_struct, thread.ra)
 	);
 

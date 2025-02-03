@@ -452,6 +452,11 @@
 #define CSR_FFLAGS_CARE 0x880
 #define FFLAGS_CLEAR 0x1F
 
+/* Pipelined Delegation CSRs */
+#define CSR_SEDELEG 0x102
+#define CSR_SIDELEG 0x103
+#define CSR_STARGET 0x5c0
+
 /* IE/IP (Supervisor/Machine Interrupt Enable/Pending) flags */
 #define IE_SIE		(_AC(0x1, UL) << RV_IRQ_SOFT)
 #define IE_TIE		(_AC(0x1, UL) << RV_IRQ_TIMER)
