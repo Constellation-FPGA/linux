@@ -10,6 +10,7 @@
 #include <linux/bits.h>
 
 /* Status register flags */
+#define SR_UIE    _AC(0x00000001, UL) /* User Interrupt Enable */
 #define SR_SIE		_AC(0x00000002, UL) /* Supervisor Interrupt Enable */
 #define SR_MIE		_AC(0x00000008, UL) /* Machine Interrupt Enable */
 #define SR_SPIE		_AC(0x00000020, UL) /* Previous Supervisor IE */
