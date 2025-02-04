@@ -53,6 +53,12 @@ static long pipelined_delegate_ioctl(struct file *filep, unsigned int cmd, unsig
 {
   /* struct pipelined_delegate_private_data *priv = filep->private_data; */
 
+  /* TODO: Dump all of pt_regs in hex somehow. */
+  struct pt_regs *regs = task_pt_regs(current);
+  pr_debug("Before ioctl SEPC: " REG_FMT "\n", csr_read(CSR_EPC));
+  pr_debug("Before ioctl pt_regs->epc: " REG_FMT "\n", regs->epc);
+  pr_debug("pt_regs addr: 0x%016lx\n", (unsigned long)regs);
+
   long ret = -ENOTTY;
   switch(cmd) {
   case PIPELINED_DELEGATE_HELLO_WORLD:
@@ -84,6 +90,10 @@ static long pipelined_delegate_ioctl(struct file *filep, unsigned int cmd, unsig
     ret = -ENOTTY;
     break;
   }
+
+  pr_debug("After ioctl SEPC: " REG_FMT "\n", csr_read(CSR_EPC));
+  pr_debug("After ioctl pt_regs->epc: " REG_FMT "\n", regs->epc);
+  pr_debug("Finished ioctl!\n");
   return ret;
 }
 

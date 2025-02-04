@@ -50,6 +50,9 @@ void __show_regs(struct pt_regs *regs)
 		pr_cont(" ra : %pS\n", (void *)regs->ra);
 	}
 
+  pr_cont("SEPC: " REG_FMT " UEPC: " REG_FMT "\n",
+          csr_read(CSR_SEPC), csr_read(CSR_UEPC));
+
 	pr_cont("epc : " REG_FMT " ra : " REG_FMT " sp : " REG_FMT "\n",
 		regs->epc, regs->ra, regs->sp);
 	pr_cont(" gp : " REG_FMT " tp : " REG_FMT " t0 : " REG_FMT "\n",

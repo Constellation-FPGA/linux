@@ -16,7 +16,7 @@ int ioctl_install_handler_address(unsigned long target_addr)
 {
   pr_info("Setting handler target to addr 0x" REG_FMT "\n", target_addr);
   csr_write(CSR_STARGET, target_addr);
-  pr_info("New STARGET: " REG_FMT "\n", csr_read(CSR_STARGET));
+  pr_debug("New STARGET: " REG_FMT "\n", csr_read(CSR_STARGET));
   return 0;
 }
 
@@ -25,9 +25,10 @@ int ioctl_delegate_traps(struct delegate_config_t trap_setup)
 {
   pr_info("Enable/Disable: %s\n", trap_setup.en_flag == 1 ? "Enable" : "Disable");
   pr_info("Trap Delegation Mask: 0x" REG_FMT "\n", trap_setup.trap_mask);
-  pr_info("SSTATUS: 0x" REG_FMT "\n", csr_read(CSR_STATUS));
+  pr_debug("SSTATUS: 0x" REG_FMT "\n", csr_read(CSR_STATUS));
 
   struct pt_regs *regs = task_pt_regs(current);
+  pr_debug("pt_regs->status: " REG_FMT "\n", regs->status);
   switch (trap_setup.en_flag) {
   case 0:
     pr_info("Clearing/Disabling SEDELEG\n");
@@ -50,7 +51,9 @@ int ioctl_delegate_traps(struct delegate_config_t trap_setup)
   }
 
   unsigned long new_sedeleg = csr_read(CSR_SEDELEG);
-  pr_info("New SEDELEG: " REG_FMT "\n", new_sedeleg);
+  pr_debug("New SEDELEG: " REG_FMT "\n", new_sedeleg);
+  pr_debug("New SSTATUS: " REG_FMT "\n", csr_read(CSR_STATUS));
+  pr_debug("New pt_regs->status: " REG_FMT "\n", regs->status);
 
   return 0;
 }
