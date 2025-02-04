@@ -6,9 +6,17 @@
 
 #include <asm/csr.h>
 
+/** Install a new virtual address to be used by pipelined exceptions.
+ *
+ * The kernel does not need to do anything. The delegation is done entirely
+ * within hardware, bypassing the kernel entirely. HOWEVER, the pipelined
+ * handler STILL relies on the kernel to provide virtual address translation.
+ * How this will play together with things like page faults, I don't know yet. */
 int ioctl_install_handler_address(unsigned long target_addr)
 {
-  pr_info("Setting handler target to addr 0x%lX\n", target_addr);
+  pr_info("Setting handler target to addr 0x" REG_FMT "\n", target_addr);
+  csr_write(CSR_STARGET, target_addr);
+  pr_info("New STARGET: " REG_FMT "\n", csr_read(CSR_STARGET));
   return 0;
 }
 
