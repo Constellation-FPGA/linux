@@ -311,7 +311,25 @@ SYM_FUNC_START(__switch_to)
 	REG_S s9,  TASK_THREAD_S9_RA(a3)
 	REG_S s10, TASK_THREAD_S10_RA(a3)
 	REG_S s11, TASK_THREAD_S11_RA(a3)
+
+	/* Save prev proc's pipelined delegation info */
+	csrr s11, CSR_STARGET
+	REG_S s11, TASK_THREAD_STARGET_RA(a3) ;
+	csrr s11, CSR_SEDELEG
+	REG_S s11, TASK_THREAD_SEDELEG_RA(a3) ;
+	csrr s11, CSR_SIDELEG
+	REG_S s11, TASK_THREAD_SIDELEG_RA(a3) ;
+
 	/* Restore context from next->thread */
+
+	/* Restore next proc's pipelined delegation info */
+	REG_L s11, TASK_THREAD_STARGET_RA(a4) ;
+	csrw CSR_STARGET, s11
+	REG_L s11, TASK_THREAD_SEDELEG_RA(a4) ;
+	csrw CSR_SEDELEG, s11
+	REG_L s11, TASK_THREAD_SIDELEG_RA(a4) ;
+	csrw CSR_SIDELEG, s11
+
 	REG_L ra,  TASK_THREAD_RA_RA(a4)
 	REG_L sp,  TASK_THREAD_SP_RA(a4)
 	REG_L s0,  TASK_THREAD_S0_RA(a4)
