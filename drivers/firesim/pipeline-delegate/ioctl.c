@@ -27,14 +27,21 @@ int ioctl_delegate_traps(struct delegate_config_t trap_setup)
   pr_info("Trap Delegation Mask: 0x" REG_FMT "\n", trap_setup.trap_mask);
   pr_info("SSTATUS: 0x" REG_FMT "\n", csr_read(CSR_STATUS));
 
+  struct pt_regs *regs = task_pt_regs(current);
   switch (trap_setup.en_flag) {
   case 0:
     pr_info("Clearing/Disabling SEDELEG\n");
     csr_clear(CSR_SEDELEG, trap_setup.trap_mask);
+    /* XXX: DISABLE UIE! */
+    /* regs->status &= 0xFFFFFFFFFFFFFFFE; */
+    regs->status &= ~SR_UIE;
     break;
   case 1:
     pr_info("Setting/Enabling SEDELEG\n");
     csr_set(CSR_SEDELEG, trap_setup.trap_mask);
+    /* XXX: ENABLE UIE! */
+    /* regs->status |= 0x0000000000000001; */
+    regs->status |= SR_UIE;
     break;
   default:
     pr_alert("Invalid trap delegation enable option! %ud is unsupported! Doing nothing\n",
