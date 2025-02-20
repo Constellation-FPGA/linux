@@ -202,6 +202,11 @@ asmlinkage __visible __trap_section void do_trap_floating_point(struct pt_regs *
 	}
 }
 
+asmlinkage __visible __trap_section void do_trap_step(struct pt_regs *regs)
+{
+  do_trap_break(regs);
+}
+
 DO_ERROR_INFO(do_trap_load_fault,
 	SIGSEGV, SEGV_ACCERR, "load access fault");
 #ifndef CONFIG_RISCV_M_MODE

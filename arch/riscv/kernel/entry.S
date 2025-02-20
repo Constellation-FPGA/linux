@@ -386,6 +386,11 @@ SYM_CODE_START(excp_vect_table)
 	RISCV_PTR do_trap_unknown
 	RISCV_PTR do_trap_unknown
 	RISCV_PTR do_trap_floating_point
+	/* The ESTEP instruction raises an EXC_INST_STEP, which Linux should
+	 *treat the same as an EBREAK. However, OpenSBI and Linux will allow
+	 * ESTEP to be pipeline delegated, allowing for faster "breakpoint"-like
+	 * behavior. */
+	RISCV_PTR do_trap_step
 excp_vect_table_end:
 SYM_CODE_END(excp_vect_table)
 
