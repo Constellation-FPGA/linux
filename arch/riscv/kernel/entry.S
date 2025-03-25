@@ -14,7 +14,25 @@
 #include <asm/asm-offsets.h>
 #include <asm/errata_list.h>
 
+/* Read from the cycle counter and stash it into USCRATCH. We must be careful
+ * about which integer register we clobber here and the manner in which we do it
+ * so that we do not destroy any state unnecessarily. We MUST clobber an integer
+ * register since there are no instructions to transfer a value from one CSR to
+ * another CSR in RISC-V.
+ * STEPS:
+ * 1. uscratch <- x1 for safe keeping
+ * 2. x1 <- cycles
+ * 3. x1 <- uscratch (stashed x1) AND SIMULTANEOUSLY
+ *    uscratch <- x1 (cycle count) */
+  .macro CYCLES_TO_USCRATCH
+  csrw CSR_USCRATCH, x1
+  rdcycle x1
+  csrrw x1, CSR_USCRATCH, x1
+  .endm
+
 SYM_CODE_START(handle_exception)
+	CYCLES_TO_USCRATCH
+
 	/*
 	 * If coming from userspace, preserve the user thread pointer and load
 	 * the kernel thread pointer.  If we came from the kernel, the scratch
@@ -174,6 +192,8 @@ SYM_CODE_START_NOALIGN(ret_from_exception)
 	restore_from_x6_to_x31
 
 	REG_L x2,  PT_SP(sp)
+
+	CYCLES_TO_USCRATCH
 
 #ifdef CONFIG_RISCV_M_MODE
 	mret
