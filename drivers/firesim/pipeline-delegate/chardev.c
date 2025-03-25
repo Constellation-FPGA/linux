@@ -45,8 +45,15 @@ static int pipelined_delegate_open(struct inode *inode, struct file *filep)
  * function. */
 static int pipelined_delegate_release(struct inode *inode, struct file *filep)
 {
+  int rc = 0;
   pr_info("Closed the pipelined delegation character device file\n");
-  return 0;
+  pr_info("Resetting pipelined delegation CSRs!\n");
+  rc = ioctl_install_handler_address(0UL);
+  struct delegate_config_t reset = {.en_flag = 0, .trap_mask = -1UL};
+  rc = ioctl_delegate_traps(reset);
+  pr_info("Closed pipelined delegation character device file %s\n",
+          rc == 0 ? "succesfully" : "failed");
+  return rc;
 }
 
 static long pipelined_delegate_ioctl(struct file *filep, unsigned int cmd, unsigned long args)
