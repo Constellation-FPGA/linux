@@ -192,8 +192,35 @@ asmlinkage __visible __trap_section void do_trap_floating_point(struct pt_regs *
 
 		local_irq_disable();
 
+		/* We cannot directly access any of the FP registers nor the
+		 * FP CSRs, since the kernel disables FP support upon entrace.
+		 * Attempting to use an FP resource after disabling FP support
+		 * yields an illegal instruction exception.
+		 * Further, this also means that the RISCV thread_struct.fstate
+		 * does NOT have a valid fstate.fcsr at this point, since it was
+		 * never saved upon entrance to the exception handler. */
+		unsigned long fcsr = regs->fcsr;
+		pr_debug("fcsr = 0x%08lx\n", fcsr);
+
+		int fpe_type = FPE_FLTUNK;
+		if (fcsr & 0x10) { /* Invalid (NaN) */
+			fpe_type = FPE_FLTINV;
+		} else if (fcsr & 0x08) { /* Divide by Zero */
+			fpe_type = FPE_FLTDIV;
+		} else if (fcsr & 0x04) { /* Overflow */
+			fpe_type = FPE_FLTOVF;
+		} else if (fcsr & 0x02) { /* Underflow */
+			fpe_type = FPE_FLTUND;
+		} else if (fcsr & 0x01) { /* Inexact */
+			fpe_type = FPE_FLTRES;
+		} else {
+			fpe_type = FPE_FLTUNK;
+		}
+
+		pr_debug("%s: Chosen FPE type = %d\n", __func__, fpe_type);
+
 		if (!handled)
-			do_trap_error(regs, SIGFPE, FPE_FLTUNK, regs->epc,
+			do_trap_error(regs, SIGFPE, fpe_type, regs->epc,
 				      "Oops - floating-point exception");
 
 		irqentry_exit_to_user_mode(regs);
