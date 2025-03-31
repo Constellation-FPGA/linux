@@ -62,6 +62,27 @@ _save_context:
 	REG_S x5,  PT_T0(sp)
 	save_from_x6_to_x31
 
+	/* HACK: If [MS]STATUS.FS states that FP support is either off or
+	 * initializing, then we should not save any FP state, since FP support may
+	 * not have been turned on yet. In this case, the and-mask will only keep
+	 * FS[1]. If that bit is clear, then we are either in the off or initial
+	 * states and should save any FP resources. If we are in the clean or dirty
+	 * states, then we have turned on FP support and should save the FP state
+	 * to pt_regs. */
+	li x30, SR_FS_OFF | SR_FS_INITIAL
+	csrr x31, CSR_STATUS
+	and x31, x31, x30
+	beqz x31, boot_runtime_xcpt
+
+	/* Read from fcsr BEFORE disabling FP support. If you do not do this, an
+	 * illegal instruction exception will be raised.
+	 *
+	 * NOTE: We put fcsr in x31 because we have already saved it to pt_regs. This
+	 * means we do not need to restore it in ret_from_exception! */
+	frcsr x31
+	REG_S x31, PT_FCSR(sp)
+
+boot_runtime_xcpt:
 	/*
 	 * Disable user-mode memory access as it should only be set in the
 	 * actual user copy routines.
