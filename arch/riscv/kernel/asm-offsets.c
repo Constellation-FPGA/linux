@@ -117,6 +117,7 @@ void asm_offsets(void)
 	OFFSET(PT_STATUS, pt_regs, status);
 	OFFSET(PT_BADADDR, pt_regs, badaddr);
 	OFFSET(PT_CAUSE, pt_regs, cause);
+	OFFSET(PT_FCSR, pt_regs, fcsr);
 	OFFSET(PT_FFLAGS_CARE, pt_regs, fflags_care);
 	OFFSET(PT_STARGET, pt_regs, starget);
 	OFFSET(PT_SEDELEG, pt_regs, sedeleg);

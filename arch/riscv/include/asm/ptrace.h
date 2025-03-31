@@ -53,6 +53,8 @@ struct pt_regs {
 	unsigned long orig_a0;
 	/* Floating-point Care register before syscall */
 	unsigned long fflags_care;
+	/* Floating-point CSR before syscall/exception */
+	unsigned long fcsr;
 	/* Pipelined exception delegation */
 	unsigned long starget;
 	unsigned long sedeleg;
