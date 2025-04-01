@@ -75,6 +75,7 @@ void asm_offsets(void)
 	OFFSET(TASK_THREAD_F30, task_struct, thread.fstate.f[30]);
 	OFFSET(TASK_THREAD_F31, task_struct, thread.fstate.f[31]);
 	OFFSET(TASK_THREAD_FCSR, task_struct, thread.fstate.fcsr);
+	OFFSET(TASK_THREAD_FFLAGS_CARE, task_struct, thread.fstate.fflags_care);
 #ifdef CONFIG_STACKPROTECTOR
 	OFFSET(TSK_STACK_CANARY, task_struct, stack_canary);
 #endif
@@ -356,6 +357,10 @@ void asm_offsets(void)
 		  offsetof(struct task_struct, thread.sideleg)
 		- offsetof(struct task_struct, thread.ra)
 	);
+	DEFINE(TASK_THREAD_FFLAGS_CARE_RA,
+		  offsetof(struct task_struct, thread.fstate.fflags_care)
+		- offsetof(struct task_struct, thread.ra)
+	);
 
 	DEFINE(TASK_THREAD_F0_F0,
 		  offsetof(struct task_struct, thread.fstate.f[0])
@@ -487,6 +492,10 @@ void asm_offsets(void)
 	);
 	DEFINE(TASK_THREAD_FCSR_F0,
 		  offsetof(struct task_struct, thread.fstate.fcsr)
+		- offsetof(struct task_struct, thread.fstate.f[0])
+	);
+	DEFINE(TASK_THREAD_FFLAGS_CARE_F0,
+		  offsetof(struct task_struct, thread.fstate.fflags_care)
 		- offsetof(struct task_struct, thread.fstate.f[0])
 	);
 

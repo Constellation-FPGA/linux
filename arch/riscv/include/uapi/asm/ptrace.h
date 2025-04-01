@@ -59,21 +59,24 @@ struct user_regs_struct {
 struct __riscv_f_ext_state {
 	__u32 f[32];
 	__u32 fcsr;
+	__u32 fflags_care;
 };
 
 struct __riscv_d_ext_state {
 	__u64 f[32];
 	__u32 fcsr;
+	__u32 fflags_care;
 };
 
 struct __riscv_q_ext_state {
 	__u64 f[64] __attribute__((aligned(16)));
 	__u32 fcsr;
+	__u32 fflags_care;
 	/*
 	 * Reserved for expansion of sigcontext structure.  Currently zeroed
 	 * upon signal, and must be zero upon sigreturn.
 	 */
-	__u32 reserved[3];
+	__u32 reserved[2];
 };
 
 struct __riscv_ctx_hdr {
