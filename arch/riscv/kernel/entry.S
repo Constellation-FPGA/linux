@@ -361,6 +361,10 @@ SYM_FUNC_START(__switch_to)
 	csrr s11, CSR_SIDELEG
 	REG_S s11, TASK_THREAD_SIDELEG_RA(a3) ;
 
+	/*
+	 * XXX: The FPE "care" mas CSR is technically FP state, which can only
+	 * be done in __switch_to_fpu!
+	 */
 	/* Restore context from next->thread */
 
 	/* Restore next proc's pipelined delegation info */
