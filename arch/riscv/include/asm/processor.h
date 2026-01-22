@@ -86,6 +86,7 @@ struct thread_struct {
 	unsigned long starget;
 	unsigned long sedeleg;
 	unsigned long sideleg;
+	unsigned long uscratch;
 };
 
 /* Whitelist the fstate from the task_struct for hardened usercopy */

@@ -357,6 +357,10 @@ void asm_offsets(void)
 		  offsetof(struct task_struct, thread.sideleg)
 		- offsetof(struct task_struct, thread.ra)
 	);
+	DEFINE(TASK_THREAD_USCRATCH_RA,
+		  offsetof(struct task_struct, thread.uscratch)
+		- offsetof(struct task_struct, thread.ra)
+	);
 	DEFINE(TASK_THREAD_FFLAGS_CARE_RA,
 		  offsetof(struct task_struct, thread.fstate.fflags_care)
 		- offsetof(struct task_struct, thread.ra)

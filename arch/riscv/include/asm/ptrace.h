@@ -59,6 +59,8 @@ struct pt_regs {
 	unsigned long starget;
 	unsigned long sedeleg;
 	unsigned long sideleg;
+	/* We do NOT expose USCRATCH through pt_regs, since the user always has direct
+	 * access to this register. It is R/W in user-mode. */
 };
 
 #define PTRACE_SYSEMU			0x1f
