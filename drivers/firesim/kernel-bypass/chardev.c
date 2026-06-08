@@ -89,6 +89,18 @@ static long kernel_bypass_ioctl(struct file *filep, unsigned int cmd, unsigned l
     ret = ioctl_delegate_traps(trap_setup);
     break;
   }
+  case KERNEL_BYPASS_HANDLE_PAGE_FAULT: {
+      struct kbe_page_fault_t page_fault;
+      ret = copy_from_user(&page_fault, (struct kbe_page_fault_t*) args,
+			   sizeof(struct kbe_page_fault_t));
+      if (ret) {
+	  pr_alert("Huh? Only copied %ld bytes from user-space... weird\n", ret);
+	  break;
+      }
+
+      ret = ioctl_handle_kbe_page_fault(page_fault);
+      break;
+  }
   case KERNEL_BYPASS_CSR_STATUS:
     ret = ioctl_csr_status();
     break;

@@ -14,6 +14,8 @@
  * Note that the struct is limited to a maximum of 16KiB (14 address bits) */
 #define IOCTL_MAGIC 'F'
 
+/** The basics we need to get exceptions bypassing the kernel. */
+
 struct delegate_config_t {
   unsigned int  en_flag;
   unsigned long trap_mask;
@@ -27,5 +29,22 @@ struct delegate_config_t {
 int ioctl_install_handler_address(unsigned long target_addr);
 int ioctl_delegate_traps(struct delegate_config_t trap_setup);
 int ioctl_csr_status(void);
+
+/** Getting KBE'd page faults back into the kernel. */
+
+struct kbe_page_fault_t {
+    enum page_fault_kind { CODE, LOAD, STORE } kind;
+    /* The virtual address that triggered the page fault.
+     *
+     * NOTE: This is NOT the address of the instruction that caused the page
+     * fault, but the address the instruction was attempting to load from or
+     * store to. In a code fault, it is the address of the code page that was
+     * attempted to be fetched. */
+    unsigned long fault_vaddr;
+};
+
+#define KERNEL_BYPASS_HANDLE_PAGE_FAULT _IOR(IOCTL_MAGIC, 0x34, struct kbe_page_fault_t*)
+
+int ioctl_handle_kbe_page_fault(struct kbe_page_fault_t fault);
 
 #endif /* KERNEL_BYPASS_IOCTL_H */

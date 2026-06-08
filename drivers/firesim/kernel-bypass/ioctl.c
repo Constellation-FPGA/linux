@@ -6,6 +6,12 @@
 
 #include <asm/csr.h>
 
+/* Hacky way at getting at the do_page_fault handler in traps.c. The handler
+ * does not have a prototype defined in a shared header (because you are never
+ * supposed to call that function yourself), so we just tell the compiler the
+ * function is extern and that we will punt the problem off to the linker. */
+extern void do_page_fault(struct pt_regs *regs);
+
 /** Install a new virtual address to be used by pipelined exceptions.
  *
  * The kernel does not need to do anything. The delegation is done entirely
@@ -56,6 +62,50 @@ int ioctl_delegate_traps(struct delegate_config_t trap_setup)
   pr_debug("New pt_regs->status: " REG_FMT "\n", regs->status);
 
   return 0;
+}
+
+/*
+ * User program that has enabled KBEs for page faults is requesting the kernel
+ * to handle some part of the page fault.
+ */
+int ioctl_handle_kbe_page_fault(struct kbe_page_fault_t fault)
+{
+    struct pt_regs regs = {0};
+    /* Build a somewhat fake pt_regs and pass it off to the normal page fault
+     * handler.
+     * In particular, we need to set the CAUSE to the right kind of page fault,
+     * make the system believe we are coming from user-space, and install the
+     * bad address we got. */
+    pr_info("Handling KBE Page fault request for user vaddr 0x" REG_FMT "\n",
+	    fault.fault_vaddr);
+
+    pr_info("UCAUSE: 0x" REG_FMT "\n", csr_read(CSR_UCAUSE));
+    pr_info("UTVAL: 0x" REG_FMT "\n", csr_read(CSR_UTVAL));
+
+    switch(fault.kind) {
+    case CODE:
+	regs.cause = EXC_INST_PAGE_FAULT;
+	pr_info("Handling Code/INSTruction page fault\n");
+	break;
+    case LOAD:
+	regs.cause = EXC_LOAD_PAGE_FAULT;
+	pr_info("Handling LOAD page fault request\n");
+	break;
+    case STORE:
+	regs.cause = EXC_STORE_PAGE_FAULT;
+	pr_info("Handling STORE page fault request\n");
+	break;
+    default:
+	die(&regs, "Unknown type of KBE page fault request!");
+	break;
+    }
+    regs.status = regs.status & SR_UPP;
+    regs.badaddr = fault.fault_vaddr;
+
+    pr_info("Handling page fault by calling do_page_fault");
+    do_page_fault(&regs);
+
+    return 0;
 }
 
 /** Dump the values of the pipelined delegation CSRs.

@@ -15,6 +15,7 @@
 #define SR_MIE		_AC(0x00000008, UL) /* Machine Interrupt Enable */
 #define SR_SPIE		_AC(0x00000020, UL) /* Previous Supervisor IE */
 #define SR_MPIE		_AC(0x00000080, UL) /* Previous Machine IE */
+#define SR_UPP		_AC(0x00000000, UL) /* Previously User */
 #define SR_SPP		_AC(0x00000100, UL) /* Previously Supervisor */
 #define SR_MPP		_AC(0x00001800, UL) /* Previously Machine */
 #define SR_SUM		_AC(0x00040000, UL) /* Supervisor User Memory Access */
