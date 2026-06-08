@@ -10,4 +10,4 @@ config FIRESIM_MODULES
     to compile modules out-of-tree.
     Enable this to build all custom modules "device drivers" into the kernel.
 
-source "pipeline-delegate/Kconfig"
+source "kernel-bypass/Kconfig"

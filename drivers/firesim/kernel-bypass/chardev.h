@@ -1,5 +1,5 @@
-#ifndef PIPELINED_DELEGATE_CHARDEV_H
-#define PIPELINED_DELEGATE_CHARDEV_H
+#ifndef KERNEL_BYPASS_CHARDEV_H
+#define KERNEL_BYPASS_CHARDEV_H
 
 #include "config.h"
 
@@ -9,4 +9,4 @@
 int create_char_devs(void);
 int destroy_char_devs(void);
 
-#endif /* PIPELINED_DELEGATE_CHARDEV_H */
+#endif /* KERNEL_BYPASS_CHARDEV_H */

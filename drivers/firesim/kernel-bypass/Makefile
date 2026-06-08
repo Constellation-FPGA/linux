@@ -1,3 +1,3 @@
-obj-y += pipeline-delegate.o \
+obj-y += kernel-bypass.o \
          chardev.o \
          ioctl.o

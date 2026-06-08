@@ -82,7 +82,7 @@ struct thread_struct {
 	unsigned long bad_cause;
 	unsigned long vstate_ctrl;
 	struct __riscv_v_ext_state vstate;
-	/* Pipelined Exceptions */
+	/* Kernel-Bypass Exceptions */
 	unsigned long starget;
 	unsigned long sedeleg;
 	unsigned long sideleg;

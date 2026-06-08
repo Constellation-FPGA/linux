@@ -1,1 +1,1 @@
-obj-y += pipeline-delegate/
+obj-y += kernel-bypass/

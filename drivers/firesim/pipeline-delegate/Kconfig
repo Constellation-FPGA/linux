@@ -1,9 +1,0 @@
-# SPDX-License-Identifier: GPL-2.0
-menu "Pipelined Delegation Modules"
-
-config FIRESIM_PIPELINE_DELEGATE
-  bool "Fast & Pipelined delegation of exceptions on RISC-V"
-  default y
-  depends on FIRESIM_MODULES
-  help
-    Enable pipelined delegation of exceptions and interrupts to userspace.

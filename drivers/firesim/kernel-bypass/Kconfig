@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: GPL-2.0
+menu "RAFT-V Kernel-Bypass Modules"
+
+config FIRESIM_KERNEL_BYPASS
+  bool "Allow exceptions to delegate past the kernel on RISC-V"
+  default y
+  depends on FIRESIM_MODULES
+  help
+    Enable kernel-bypass of exceptions and interrupts to userspace.

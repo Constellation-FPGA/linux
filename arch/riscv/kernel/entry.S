@@ -353,7 +353,7 @@ SYM_FUNC_START(__switch_to)
 	REG_S s10, TASK_THREAD_S10_RA(a3)
 	REG_S s11, TASK_THREAD_S11_RA(a3)
 
-	/* Save prev proc's pipelined delegation info */
+	/* Save prev proc's kernel-bypass info */
 	csrr s11, CSR_STARGET
 	REG_S s11, TASK_THREAD_STARGET_RA(a3) ;
 	csrr s11, CSR_SEDELEG
@@ -369,7 +369,7 @@ SYM_FUNC_START(__switch_to)
 	 */
 	/* Restore context from next->thread */
 
-	/* Restore next proc's pipelined delegation info */
+	/* Restore next proc's kernel-bypass info */
 	REG_L s11, TASK_THREAD_STARGET_RA(a4) ;
 	csrw CSR_STARGET, s11
 	REG_L s11, TASK_THREAD_SEDELEG_RA(a4) ;

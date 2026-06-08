@@ -9,7 +9,7 @@
 #include <asm/csr.h>
 #include <asm/ptrace.h>
 
-static int __init pipeline_delegate_init(void)
+static int __init kernel_bypass_init(void)
 {
   pr_info("Starting Pipelined Delegation module\n");
 
@@ -28,7 +28,7 @@ static int __init pipeline_delegate_init(void)
   return 0;
 }
 
-static void __exit pipeline_delegate_exit(void)
+static void __exit kernel_bypass_exit(void)
 {
   pr_info("Stopping Pipelined Delegation module\n");
 
@@ -44,8 +44,8 @@ static void __exit pipeline_delegate_exit(void)
   rc = destroy_char_devs();
 }
 
-module_init(pipeline_delegate_init);
-module_exit(pipeline_delegate_exit);
+module_init(kernel_bypass_init);
+module_exit(kernel_bypass_exit);
 MODULE_VERSION("0.0");
 MODULE_DESCRIPTION("Work with Pipelined Delegation");
 MODULE_LICENSE("UNKNOWN");
