@@ -179,6 +179,15 @@ int arch_dup_task_struct(struct task_struct *dst, struct task_struct *src)
 	/* clear entire V context, including datap for a new task */
 	memset(&dst->thread.vstate, 0, sizeof(struct __riscv_v_ext_state));
 
+	/* Clear KBE context for new task */
+	csr_write(CSR_STARGET, 0);
+	csr_write(CSR_SEDELEG, 0);
+	csr_write(CSR_SIDELEG, 0);
+	csr_write(CSR_USCRATCH, 0);
+	csr_write(CSR_UEPC, 0);
+	csr_write(CSR_UCAUSE, 0);
+	csr_write(CSR_SALREADY_HANDLING, false);
+
 	return 0;
 }
 
