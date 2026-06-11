@@ -186,6 +186,7 @@ int arch_dup_task_struct(struct task_struct *dst, struct task_struct *src)
 	csr_write(CSR_USCRATCH, 0);
 	csr_write(CSR_UEPC, 0);
 	csr_write(CSR_UCAUSE, 0);
+	csr_write(CSR_UTVAL, 0);
 	csr_write(CSR_SALREADY_HANDLING, false);
 
 	return 0;

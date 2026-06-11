@@ -73,5 +73,6 @@ int ioctl_csr_status(void)
   pr_info("USCRATCH: 0x" REG_FMT "\n", csr_read(CSR_USCRATCH));
   pr_info("UEPC: 0x" REG_FMT "\n", csr_read(CSR_UEPC));
   pr_info("UCAUSE: 0x" REG_FMT "\n", csr_read(CSR_UCAUSE));
+  pr_info("UTVAL: 0x" REG_FMT "\n", csr_read(CSR_UTVAL));
   return 0;
 }
