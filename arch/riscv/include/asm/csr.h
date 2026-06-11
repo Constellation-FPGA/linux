@@ -457,8 +457,8 @@
 #define CSR_SEDELEG 0x102
 #define CSR_SIDELEG 0x103
 #define CSR_STARGET 0x5c0
-#define CSR_UEPC    0x841
 #define CSR_USCRATCH 0x840
+#define CSR_UEPC    0x841
 
 /* IE/IP (Supervisor/Machine Interrupt Enable/Pending) flags */
 #define IE_SIE		(_AC(0x1, UL) << RV_IRQ_SOFT)
