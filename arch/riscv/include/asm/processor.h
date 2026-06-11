@@ -83,9 +83,9 @@ struct thread_struct {
 	unsigned long vstate_ctrl;
 	struct __riscv_v_ext_state vstate;
 	/* Kernel-Bypass Exceptions */
-	unsigned long starget;
 	unsigned long sedeleg;
 	unsigned long sideleg;
+	unsigned long starget;
 	unsigned long uscratch;
 	unsigned long uepc;
 	unsigned long ucause;

@@ -345,16 +345,16 @@ void asm_offsets(void)
 		  offsetof(struct task_struct, thread.s[11])
 		- offsetof(struct task_struct, thread.ra)
 	);
-	DEFINE(TASK_THREAD_STARGET_RA,
-		  offsetof(struct task_struct, thread.starget)
-		- offsetof(struct task_struct, thread.ra)
-	);
 	DEFINE(TASK_THREAD_SEDELEG_RA,
 		  offsetof(struct task_struct, thread.sedeleg)
 		- offsetof(struct task_struct, thread.ra)
 	);
 	DEFINE(TASK_THREAD_SIDELEG_RA,
 		  offsetof(struct task_struct, thread.sideleg)
+		- offsetof(struct task_struct, thread.ra)
+	);
+	DEFINE(TASK_THREAD_STARGET_RA,
+		  offsetof(struct task_struct, thread.starget)
 		- offsetof(struct task_struct, thread.ra)
 	);
 	DEFINE(TASK_THREAD_USCRATCH_RA,
