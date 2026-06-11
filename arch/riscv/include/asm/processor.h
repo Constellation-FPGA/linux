@@ -88,6 +88,7 @@ struct thread_struct {
 	unsigned long sideleg;
 	unsigned long uscratch;
 	unsigned long uepc;
+	unsigned long ucause;
 };
 
 /* Whitelist the fstate from the task_struct for hardened usercopy */

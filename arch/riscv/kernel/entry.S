@@ -364,6 +364,8 @@ SYM_FUNC_START(__switch_to)
 	REG_S s11, TASK_THREAD_USCRATCH_RA(a3) ;
 	csrr s11, CSR_UEPC
 	REG_S s11, TASK_THREAD_UEPC_RA(a3) ;
+	csrr s11, CSR_UCAUSE
+	REG_S s11, TASK_THREAD_UCAUSE_RA(a3) ;
 
 	/*
 	 * XXX: The FPE "care" mas CSR is technically FP state, which can only
@@ -382,6 +384,8 @@ SYM_FUNC_START(__switch_to)
 	csrw CSR_USCRATCH, s11
 	REG_L s11, TASK_THREAD_UEPC_RA(a4) ;
 	csrw CSR_UEPC, s11
+	REG_L s11, TASK_THREAD_UCAUSE_RA(a4) ;
+	csrw CSR_UCAUSE, s11
 
 	REG_L ra,  TASK_THREAD_RA_RA(a4)
 	REG_L sp,  TASK_THREAD_SP_RA(a4)
