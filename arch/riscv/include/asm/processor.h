@@ -89,6 +89,7 @@ struct thread_struct {
 	unsigned long uscratch;
 	unsigned long uepc;
 	unsigned long ucause;
+	unsigned long salready_handling;
 };
 
 /* Whitelist the fstate from the task_struct for hardened usercopy */
