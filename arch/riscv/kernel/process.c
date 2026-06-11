@@ -167,6 +167,9 @@ void arch_release_task_struct(struct task_struct *tsk)
 	/* Free the vector context of datap. */
 	if (has_vector())
 		kfree(tsk->thread.vstate.datap);
+
+	/* If dying, clean up KBE state of the dying process too. */
+	csr_write(CSR_SALREADY_HANDLING, false);
 }
 
 int arch_dup_task_struct(struct task_struct *dst, struct task_struct *src)
