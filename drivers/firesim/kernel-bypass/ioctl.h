@@ -27,8 +27,8 @@ struct delegate_config_t {
 };
 
 #define KERNEL_BYPASS_HELLO_WORLD _IO(KBE_IOCTL_MAGIC, 0x30)
-#define KERNEL_BYPASS_INSTALL_HANDLER_TARGET _IOR(KBE_IOCTL_MAGIC, 0x31, unsigned long)
-#define KERNEL_BYPASS_DELEGATE_TRAPS _IOR(KBE_IOCTL_MAGIC, 0x32, struct delegate_config_t*)
+#define KERNEL_BYPASS_INSTALL_HANDLER_TARGET _IOW(KBE_IOCTL_MAGIC, 0x31, unsigned long)
+#define KERNEL_BYPASS_DELEGATE_TRAPS _IOW(KBE_IOCTL_MAGIC, 0x32, struct delegate_config_t*)
 #define KERNEL_BYPASS_CSR_STATUS _IO(KBE_IOCTL_MAGIC, 0x33)
 
 int ioctl_install_handler_address(unsigned long target_addr);
@@ -48,7 +48,7 @@ struct kbe_page_fault_t {
     __u64 fault_vaddr;
 };
 
-#define KERNEL_BYPASS_HANDLE_PAGE_FAULT _IOR(KBE_IOCTL_MAGIC, 0x34, struct kbe_page_fault_t*)
+#define KERNEL_BYPASS_HANDLE_PAGE_FAULT _IOW(KBE_IOCTL_MAGIC, 0x34, struct kbe_page_fault_t*)
 
 int ioctl_handle_kbe_page_fault(struct kbe_page_fault_t fault);
 
