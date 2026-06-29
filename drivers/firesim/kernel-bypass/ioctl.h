@@ -17,8 +17,8 @@
 /** The basics we need to get exceptions bypassing the kernel. */
 
 struct delegate_config_t {
-  unsigned int  en_flag;
-  unsigned long trap_mask;
+  __u32 en_flag;
+  __u64 trap_mask;
 };
 
 #define KERNEL_BYPASS_HELLO_WORLD _IO(IOCTL_MAGIC, 0x30)
@@ -40,7 +40,7 @@ struct kbe_page_fault_t {
      * fault, but the address the instruction was attempting to load from or
      * store to. In a code fault, it is the address of the code page that was
      * attempted to be fetched. */
-    unsigned long fault_vaddr;
+    __u64 fault_vaddr;
 };
 
 #define KERNEL_BYPASS_HANDLE_PAGE_FAULT _IOR(IOCTL_MAGIC, 0x34, struct kbe_page_fault_t*)
