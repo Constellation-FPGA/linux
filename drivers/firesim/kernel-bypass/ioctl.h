@@ -1,6 +1,11 @@
 #ifndef KERNEL_BYPASS_IOCTL_H
 #define KERNEL_BYPASS_IOCTL_H
 
+#ifndef __KERNEL__
+typedef unsigned int  __u32;
+typedef unsigned long __u64;
+#endif
+
 /* The magic 'F' has MANY drivers. Some other sequence numbers (the second param)
  * are taken. I use between 0x30 and 0x80 to give myself room to experiment.
  * To define a new ioctl number, I recommend you use one of the 4 macros below:
