@@ -2,6 +2,10 @@
 #define KERNEL_BYPASS_IOCTL_H
 
 #ifndef __KERNEL__
+#include <sys/ioctl.h>
+#endif
+
+#ifndef __KERNEL__
 typedef unsigned int  __u32;
 typedef unsigned long __u64;
 #endif
