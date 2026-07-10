@@ -373,6 +373,10 @@ void asm_offsets(void)
 		  offsetof(struct task_struct, thread.utval)
 		- offsetof(struct task_struct, thread.ra)
 	);
+	DEFINE(TASK_THREAD_USSCRATCH_RA,
+		  offsetof(struct task_struct, thread.usscratch)
+		- offsetof(struct task_struct, thread.ra)
+	);
 	DEFINE(TASK_THREAD_SALREADY_HANDLING_RA,
 		  offsetof(struct task_struct, thread.salready_handling)
 		- offsetof(struct task_struct, thread.ra)

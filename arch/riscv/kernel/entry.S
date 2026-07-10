@@ -14,7 +14,7 @@
 #include <asm/asm-offsets.h>
 #include <asm/errata_list.h>
 
-/* Read from the cycle counter and stash it into USCRATCH. We must be careful
+/* Read from the cycle counter and stash it into USSCRATCH. We must be careful
  * about which integer register we clobber here and the manner in which we do it
  * so that we do not destroy any state unnecessarily. We MUST clobber an integer
  * register since there are no instructions to transfer a value from one CSR to
@@ -24,14 +24,14 @@
  * 2. x1 <- cycles
  * 3. x1 <- uscratch (stashed x1) AND SIMULTANEOUSLY
  *    uscratch <- x1 (cycle count) */
-  .macro CYCLES_TO_USCRATCH
-  csrw CSR_USCRATCH, x1
+  .macro CYCLES_TO_USSCRATCH
+  csrw CSR_USSCRATCH, x1
   rdcycle x1
-  csrrw x1, CSR_USCRATCH, x1
+  csrrw x1, CSR_USSCRATCH, x1
   .endm
 
 SYM_CODE_START(handle_exception)
-	CYCLES_TO_USCRATCH
+	CYCLES_TO_USSCRATCH
 
 	/*
 	 * If coming from userspace, preserve the user thread pointer and load
@@ -214,7 +214,7 @@ SYM_CODE_START_NOALIGN(ret_from_exception)
 
 	REG_L x2,  PT_SP(sp)
 
-	CYCLES_TO_USCRATCH
+	CYCLES_TO_USSCRATCH
 
 #ifdef CONFIG_RISCV_M_MODE
 	mret
@@ -368,6 +368,8 @@ SYM_FUNC_START(__switch_to)
 	REG_S s11, TASK_THREAD_UCAUSE_RA(a3) ;
 	csrr s11, CSR_UTVAL
 	REG_S s11, TASK_THREAD_UTVAL_RA(a3) ;
+	csrr s11, CSR_USSCRATCH
+	REG_S s11, TASK_THREAD_USSCRATCH_RA(a3) ;
 	csrr s11, CSR_SALREADY_HANDLING
 	REG_S s11, TASK_THREAD_SALREADY_HANDLING_RA(a3) ;
 
@@ -392,6 +394,8 @@ SYM_FUNC_START(__switch_to)
 	csrw CSR_UCAUSE, s11
 	REG_L s11, TASK_THREAD_UTVAL_RA(a4) ;
 	csrw CSR_UTVAL, s11
+	REG_L s11, TASK_THREAD_USSCRATCH_RA(a4) ;
+	csrw CSR_USSCRATCH, s11
 	REG_L s11, TASK_THREAD_SALREADY_HANDLING_RA(a4) ;
 	csrw CSR_SALREADY_HANDLING, s11
 

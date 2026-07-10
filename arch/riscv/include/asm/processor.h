@@ -89,6 +89,7 @@ struct thread_struct {
 	unsigned long uscratch;
 	unsigned long uepc;
 	unsigned long ucause;
+	unsigned long usscratch;
 	unsigned long utval;
 	unsigned long salready_handling;
 };
