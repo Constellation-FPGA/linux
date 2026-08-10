@@ -82,7 +82,8 @@ static long kernel_bypass_ioctl(struct file *filep, unsigned int cmd, unsigned l
     ret = copy_from_user(&trap_setup, (struct delegate_config_t*) args,
                          sizeof(struct delegate_config_t));
     if (ret) {
-      pr_alert("Huh? Only copied %ld bytes from user-space... weird\n", ret);
+      pr_alert("Huh? Only copied %ld bytes from user-space... weird\n",
+	       (sizeof(struct delegate_config_t) - ret));
       break;
     }
 
@@ -94,7 +95,8 @@ static long kernel_bypass_ioctl(struct file *filep, unsigned int cmd, unsigned l
       ret = copy_from_user(&page_fault, (struct kbe_page_fault_t*) args,
 			   sizeof(struct kbe_page_fault_t));
       if (ret) {
-	  pr_alert("Huh? Only copied %ld bytes from user-space... weird\n", ret);
+	  pr_alert("Huh? Only copied %ld bytes from user-space... weird\n",
+		   (sizeof(struct kbe_page_fault_t) - ret));
 	  break;
       }
 
