@@ -108,6 +108,13 @@ int ioctl_handle_kbe_page_fault(struct kbe_page_fault_t fault)
     return 0;
 }
 
+void ioctl_handle_time(struct kbe_ioctl_time_t* time)
+{
+    time->start_ioctl = csr_read(CSR_CYCLE);
+    pr_debug("Handling time measurement ioctl\n");
+    time->hit_kernel = csr_read(CSR_USSCRATCH);
+}
+
 /** Dump the values of the pipelined delegation CSRs.
  *
  * Mostly useful for checking the status of the hart when you are running and

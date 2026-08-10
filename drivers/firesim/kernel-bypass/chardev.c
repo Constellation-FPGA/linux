@@ -103,6 +103,18 @@ static long kernel_bypass_ioctl(struct file *filep, unsigned int cmd, unsigned l
       ret = ioctl_handle_kbe_page_fault(page_fault);
       break;
   }
+  case KERNEL_BYPASS_IOCTL_TIME: {
+      struct kbe_ioctl_time_t times = { 0 };
+      ioctl_handle_time(&times);
+      ret = copy_to_user((struct kbe_ioctl_time_t*) args, &times,
+			 sizeof(struct kbe_ioctl_time_t));
+      if (ret) {
+	  pr_alert("Only copied %ld bytes of ioctl times to user-space\n",
+		   (sizeof (struct kbe_ioctl_time_t) - ret));
+	  break;
+      }
+      break;
+  }
   case KERNEL_BYPASS_CSR_STATUS:
     ret = ioctl_csr_status();
     break;

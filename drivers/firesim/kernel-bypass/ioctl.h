@@ -56,4 +56,12 @@ struct kbe_page_fault_t {
 
 int ioctl_handle_kbe_page_fault(struct kbe_page_fault_t fault);
 
+struct kbe_ioctl_time_t {
+    __u64 hit_kernel;
+    __u64 start_ioctl;
+};
+
+#define KERNEL_BYPASS_IOCTL_TIME _IOR(KBE_IOCTL_MAGIC, 0x35, struct kbe_ioctl_time_t*)
+void ioctl_handle_time(struct kbe_ioctl_time_t* time);
+
 #endif /* KERNEL_BYPASS_IOCTL_H */
