@@ -102,7 +102,7 @@ int ioctl_handle_kbe_page_fault(struct kbe_page_fault_t fault)
     regs.status = regs.status & SR_UPP;
     regs.badaddr = fault.fault_vaddr;
 
-    pr_info("Handling page fault by calling do_page_fault");
+    pr_info("Handling page fault by calling do_page_fault\n");
     do_page_fault(&regs);
 
     return 0;

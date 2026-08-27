@@ -374,7 +374,7 @@ SYM_FUNC_START(__switch_to)
 	REG_S s11, TASK_THREAD_SALREADY_HANDLING_RA(a3) ;
 
 	/*
-	 * XXX: The FPE "care" mas CSR is technically FP state, which can only
+	 * XXX: The FPE "care" mask CSR is technically FP state, which can only
 	 * be done in __switch_to_fpu!
 	 */
 	/* Restore context from next->thread */
