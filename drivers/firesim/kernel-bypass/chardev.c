@@ -23,7 +23,7 @@ static int major_device_number;
 
 /** Change the RWX bits of the /dev file created by the device_create call in
  * create_char_devs. */
-static int kernel_bypass_uevent(const struct device *dev, struct kobj_uevent_env *env)
+static int kernel_bypass_uevent(struct device *dev, struct kobj_uevent_env *env)
 {
   add_uevent_var(env, "DEVMODE=%#o", 0666);
   return 0;
@@ -46,10 +46,10 @@ static int kernel_bypass_open(struct inode *inode, struct file *filep)
 static int kernel_bypass_release(struct inode *inode, struct file *filep)
 {
   int rc = 0;
+  struct delegate_config_t reset = {.en_flag = 0, .trap_mask = -1UL};
   pr_info("Closed the Kernel-Bypass Exception character device file\n");
   pr_info("Resetting Kernel-Bypass Exception CSRs!\n");
   rc = ioctl_install_handler_address(0UL);
-  struct delegate_config_t reset = {.en_flag = 0, .trap_mask = -1UL};
   rc = ioctl_delegate_traps(reset);
   pr_info("Closed Kernel-Bypass Exception character device file %s\n",
           rc == 0 ? "succesfully" : "failed");
@@ -62,11 +62,11 @@ static long kernel_bypass_ioctl(struct file *filep, unsigned int cmd, unsigned l
 
   /* TODO: Dump all of pt_regs in hex somehow. */
   struct pt_regs *regs = task_pt_regs(current);
+  long ret = -ENOTTY;
   pr_debug("Before ioctl SEPC: " REG_FMT "\n", csr_read(CSR_EPC));
   pr_debug("Before ioctl pt_regs->epc: " REG_FMT "\n", regs->epc);
   pr_debug("pt_regs addr: 0x%016lx\n", (unsigned long)regs);
 
-  long ret = -ENOTTY;
   switch(cmd) {
   case KERNEL_BYPASS_HELLO_WORLD:
     pr_info("HELLO WORLD!\n");
@@ -154,7 +154,7 @@ int create_char_devs(void)
   major_device_number = MAJOR(char_dev);
   pr_debug("Major Device Number: %d", major_device_number);
 
-  kernel_bypass_dev_class = class_create("kernel-bypass");
+  kernel_bypass_dev_class = class_create(THIS_MODULE, "kernel-bypass");
   /* kernel_bypass_dev_class = class_create(THIS_MODULE, "Kernel-Bypass Exception Char Class"); */
   if (!kernel_bypass_dev_class) {
     pr_alert("Could not create character class for device\n");

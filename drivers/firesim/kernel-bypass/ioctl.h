@@ -26,8 +26,8 @@ typedef unsigned long __u64;
 /** The basics we need to get exceptions bypassing the kernel. */
 
 struct delegate_config_t {
-  __u32 en_flag;
-  __u64 trap_mask;
+  unsigned en_flag;
+  long unsigned trap_mask;
 };
 
 #define KERNEL_BYPASS_HELLO_WORLD _IO(KBE_IOCTL_MAGIC, 0x30)

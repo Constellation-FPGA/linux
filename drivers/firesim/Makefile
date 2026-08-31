@@ -1,1 +1,1 @@
-obj-y += kernel-bypass/
+kernel-bypass-m += kernel-bypass/

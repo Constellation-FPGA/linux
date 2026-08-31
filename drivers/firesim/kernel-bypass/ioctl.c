@@ -21,31 +21,33 @@ extern void do_page_fault(struct pt_regs *regs);
 int ioctl_install_handler_address(unsigned long target_addr)
 {
   pr_info("Setting handler target to addr 0x" REG_FMT "\n", target_addr);
-  csr_write(CSR_STARGET, target_addr);
-  pr_debug("New STARGET: " REG_FMT "\n", csr_read(CSR_STARGET));
+  // csr_write(CSR_STARGET, target_addr);
+  // pr_debug("New STARGET: " REG_FMT "\n", csr_read(CSR_STARGET));
   return 0;
 }
 
 /** Enable/Disable a particular pattern of traps. */
 int ioctl_delegate_traps(struct delegate_config_t trap_setup)
 {
+  struct pt_regs *regs = task_pt_regs(current);
+  unsigned long new_sedeleg = 0;
+
   pr_info("Enable/Disable: %s\n", trap_setup.en_flag == 1 ? "Enable" : "Disable");
   pr_info("Trap Delegation Mask: 0x" REG_FMT "\n", trap_setup.trap_mask);
   pr_debug("SSTATUS: 0x" REG_FMT "\n", csr_read(CSR_STATUS));
 
-  struct pt_regs *regs = task_pt_regs(current);
   pr_debug("pt_regs->status: " REG_FMT "\n", regs->status);
   switch (trap_setup.en_flag) {
   case 0:
     pr_info("Clearing/Disabling SEDELEG\n");
-    csr_clear(CSR_SEDELEG, trap_setup.trap_mask);
+    // csr_clear(CSR_SEDELEG, trap_setup.trap_mask);
     /* XXX: DISABLE UIE! */
     /* regs->status &= 0xFFFFFFFFFFFFFFFE; */
     regs->status &= ~SR_UIE;
     break;
   case 1:
     pr_info("Setting/Enabling SEDELEG\n");
-    csr_set(CSR_SEDELEG, trap_setup.trap_mask);
+    // csr_set(CSR_SEDELEG, trap_setup.trap_mask);
     /* XXX: ENABLE UIE! */
     /* regs->status |= 0x0000000000000001; */
     regs->status |= SR_UIE;
@@ -56,8 +58,8 @@ int ioctl_delegate_traps(struct delegate_config_t trap_setup)
     break;
   }
 
-  unsigned long new_sedeleg = csr_read(CSR_SEDELEG);
-  pr_debug("New SEDELEG: " REG_FMT "\n", new_sedeleg);
+  // new_sedeleg = csr_read(CSR_SEDELEG);
+  // pr_debug("New SEDELEG: " REG_FMT "\n", new_sedeleg);
   pr_debug("New SSTATUS: " REG_FMT "\n", csr_read(CSR_STATUS));
   pr_debug("New pt_regs->status: " REG_FMT "\n", regs->status);
 
@@ -96,14 +98,14 @@ int ioctl_handle_kbe_page_fault(struct kbe_page_fault_t fault)
 	pr_info("Handling STORE page fault request\n");
 	break;
     default:
-	die(&regs, "Unknown type of KBE page fault request!");
+	/* die(&regs, "Unknown type of KBE page fault request!"); */
 	break;
     }
     regs.status = regs.status & SR_UPP;
     regs.badaddr = fault.fault_vaddr;
 
-    pr_info("Handling page fault by calling do_page_fault\n");
-    do_page_fault(&regs);
+    pr_info("Handling page fault by calling do_page_fault");
+    /* do_page_fault(&regs); */
 
     return 0;
 }
@@ -112,7 +114,8 @@ void ioctl_handle_time(struct kbe_ioctl_time_t* time)
 {
     time->start_ioctl = csr_read(CSR_CYCLE);
     pr_debug("Handling time measurement ioctl\n");
-    time->hit_kernel = csr_read(CSR_USSCRATCH);
+    /* time->hit_kernel = csr_read(CSR_USSCRATCH); */
+    time->hit_kernel = -1;
 }
 
 /** Dump the values of the pipelined delegation CSRs.
@@ -121,15 +124,15 @@ void ioctl_handle_time(struct kbe_ioctl_time_t* time)
  * debugging in Firesim. */
 int ioctl_csr_status(void)
 {
-  pr_info("STARGET: 0x" REG_FMT "\n", csr_read(CSR_STARGET));
-  pr_info("SEDELEG: 0x" REG_FMT "\n", csr_read(CSR_SEDELEG));
-  pr_info("SIDELEG: 0x" REG_FMT "\n", csr_read(CSR_SIDELEG));
+  // pr_info("STARGET: 0x" REG_FMT "\n", csr_read(CSR_STARGET));
+  // pr_info("SEDELEG: 0x" REG_FMT "\n", csr_read(CSR_SEDELEG));
+  // pr_info("SIDELEG: 0x" REG_FMT "\n", csr_read(CSR_SIDELEG));
   pr_info("SSTATUS: 0x" REG_FMT "\n", csr_read(CSR_SSTATUS));
-  pr_info("SALREADY_HANDLING: 0x" REG_FMT "\n", csr_read(CSR_SALREADY_HANDLING));
-  pr_info("UALREADY_HANDLING: 0x" REG_FMT "\n", csr_read(CSR_UALREADY_HANDLING));
-  pr_info("USCRATCH: 0x" REG_FMT "\n", csr_read(CSR_USCRATCH));
-  pr_info("UEPC: 0x" REG_FMT "\n", csr_read(CSR_UEPC));
-  pr_info("UCAUSE: 0x" REG_FMT "\n", csr_read(CSR_UCAUSE));
-  pr_info("UTVAL: 0x" REG_FMT "\n", csr_read(CSR_UTVAL));
+  // pr_info("SALREADY_HANDLING: 0x" REG_FMT "\n", csr_read(CSR_SALREADY_HANDLING));
+  // pr_info("UALREADY_HANDLING: 0x" REG_FMT "\n", csr_read(CSR_UALREADY_HANDLING));
+  // pr_info("USCRATCH: 0x" REG_FMT "\n", csr_read(CSR_USCRATCH));
+  // pr_info("UEPC: 0x" REG_FMT "\n", csr_read(CSR_UEPC));
+  // pr_info("UCAUSE: 0x" REG_FMT "\n", csr_read(CSR_UCAUSE));
+  // pr_info("UTVAL: 0x" REG_FMT "\n", csr_read(CSR_UTVAL));
   return 0;
 }
