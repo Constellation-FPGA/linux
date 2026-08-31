@@ -6,6 +6,7 @@
 #include <linux/kernel.h>
 #include <linux/cdev.h>
 #include <linux/fs.h>
+#include <linux/version.h>
 
 #define DEVICE_NAME MODULE_NAME
 
@@ -23,7 +24,11 @@ static int major_device_number;
 
 /** Change the RWX bits of the /dev file created by the device_create call in
  * create_char_devs. */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 2, 0)
+static int kernel_bypass_uevent(const struct device *dev, struct kobj_uevent_env *env)
+#else
 static int kernel_bypass_uevent(struct device *dev, struct kobj_uevent_env *env)
+#endif
 {
   add_uevent_var(env, "DEVMODE=%#o", 0666);
   return 0;
@@ -154,8 +159,11 @@ int create_char_devs(void)
   major_device_number = MAJOR(char_dev);
   pr_debug("Major Device Number: %d", major_device_number);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
+  kernel_bypass_dev_class = class_create("kernel-bypass");
+#else
   kernel_bypass_dev_class = class_create(THIS_MODULE, "kernel-bypass");
-  /* kernel_bypass_dev_class = class_create(THIS_MODULE, "Kernel-Bypass Exception Char Class"); */
+#endif
   if (!kernel_bypass_dev_class) {
     pr_alert("Could not create character class for device\n");
     goto could_not_alloc_chr_region;
