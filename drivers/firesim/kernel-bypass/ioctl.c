@@ -82,6 +82,7 @@ int ioctl_handle_kbe_page_fault(struct kbe_page_fault_t fault)
     pr_info("UCAUSE: 0x" REG_FMT "\n", csr_read(CSR_UCAUSE));
     pr_info("UTVAL: 0x" REG_FMT "\n", csr_read(CSR_UTVAL));
 
+    regs.epc = fault.epc;
     regs.badaddr = fault.fault_vaddr;
 
     switch(fault.kind) {

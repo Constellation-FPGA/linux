@@ -43,12 +43,19 @@ int ioctl_csr_status(void);
 
 struct kbe_page_fault_t {
     enum page_fault_kind { CODE, LOAD, STORE } kind;
+    /* The exceptional program counter. The virtual address of the INSTRUCTION
+     * that triggered the fault.
+     *
+     * NOTE: This is NOT the address that was attempted to load/store from/to! */
+    __u64 epc;
+
     /* The virtual address that triggered the page fault.
      *
      * NOTE: This is NOT the address of the instruction that caused the page
      * fault, but the address the instruction was attempting to load from or
      * store to. In a code fault, it is the address of the code page that was
-     * attempted to be fetched. */
+     * attempted to be fetched. Look at the fault_pc field in this struct to
+     * record the PC of the instruction that caused the fault. */
     __u64 fault_vaddr;
 };
 
