@@ -82,6 +82,8 @@ int ioctl_handle_kbe_page_fault(struct kbe_page_fault_t fault)
     pr_info("UCAUSE: 0x" REG_FMT "\n", csr_read(CSR_UCAUSE));
     pr_info("UTVAL: 0x" REG_FMT "\n", csr_read(CSR_UTVAL));
 
+    regs.badaddr = fault.fault_vaddr;
+
     switch(fault.kind) {
     case CODE:
 	regs.cause = EXC_INST_PAGE_FAULT;
@@ -99,8 +101,9 @@ int ioctl_handle_kbe_page_fault(struct kbe_page_fault_t fault)
 	die(&regs, "Unknown type of KBE page fault request!");
 	break;
     }
+
+    // Explicitly denote that the previous privilege mode was user-mode.
     regs.status = regs.status & SR_UPP;
-    regs.badaddr = fault.fault_vaddr;
 
     pr_info("Handling page fault by calling do_page_fault\n");
     do_page_fault(&regs);
