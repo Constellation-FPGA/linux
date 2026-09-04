@@ -3,6 +3,7 @@
 
 #include <linux/cpu.h>
 #include <linux/kernel.h>
+#include <linux/string.h>
 
 #include <asm/csr.h>
 
@@ -71,6 +72,11 @@ int ioctl_delegate_traps(struct delegate_config_t trap_setup)
 int ioctl_handle_kbe_page_fault(struct kbe_page_fault_t fault)
 {
     struct pt_regs regs = {0};
+
+    /* Force regs to be clean and zero, just in case the stack has garbage at
+     * the location where regs ended up. */
+    memset(&regs, 0, sizeof(struct pt_regs));
+
     /* Build a somewhat fake pt_regs and pass it off to the normal page fault
      * handler.
      * In particular, we need to set the CAUSE to the right kind of page fault,
