@@ -89,8 +89,10 @@ boot_runtime_xcpt:
 	 *
 	 * Disable the FPU/Vector to detect illegal usage of floating point
 	 * or vector in kernel space.
+	 *
+	 * Disable KBEs by clearing the "chicken bit" in SSTATUS.
 	 */
-	li t0, SR_SUM | SR_FS_VS
+	li t0, SR_SUM | SR_FS_VS | SR_UIE
 
 	REG_L s0, TASK_TI_USER_SP(tp)
 	csrrc s1, CSR_STATUS, t0
@@ -195,6 +197,13 @@ SYM_CODE_START_NOALIGN(ret_from_exception)
 	REG_L  a2, PT_EPC(sp)
 	REG_SC x0, a2, PT_EPC(sp)
 
+	/* Re-enable KBEs if they were enabled before or this exception
+	 * (syscall) enabled them. The KBE ioctl directly writes CSR_STATUS.
+	 * So if KBEs were disabled before and are now enabled, they should
+	 * remain enabled. */
+	csrr a1, CSR_STATUS
+	andi a1, a1, SR_UIE // Only keep UIE "chicken bit"
+	or a0, a0, a1 // Set UIE bit in value to restore if it was set
 	csrw CSR_STATUS, a0
 	csrw CSR_EPC, a2
 
