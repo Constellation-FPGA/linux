@@ -4,6 +4,7 @@
 #include <linux/cpu.h>
 #include <linux/kernel.h>
 #include <linux/string.h>
+#include <linux/sched/debug.h>
 
 #include <asm/csr.h>
 
@@ -31,7 +32,8 @@ int ioctl_install_handler_address(unsigned long target_addr)
 int ioctl_delegate_traps(struct delegate_config_t trap_setup)
 {
   pr_info("Enable/Disable: %s\n", trap_setup.en_flag == 1 ? "Enable" : "Disable");
-  pr_info("Trap Delegation Mask: 0x" REG_FMT "\n", trap_setup.trap_mask);
+  pr_info("Trap Delegation Mask: 0x" REG_FMT "\n",
+	  (unsigned long)trap_setup.trap_mask);
   pr_debug("SSTATUS: 0x" REG_FMT "\n", csr_read(CSR_STATUS));
 
   struct pt_regs *regs = task_pt_regs(current);
@@ -60,7 +62,9 @@ int ioctl_delegate_traps(struct delegate_config_t trap_setup)
   unsigned long new_sedeleg = csr_read(CSR_SEDELEG);
   pr_debug("New SEDELEG: " REG_FMT "\n", new_sedeleg);
   pr_debug("New SSTATUS: " REG_FMT "\n", csr_read(CSR_STATUS));
-  pr_debug("New pt_regs->status: " REG_FMT "\n", regs->status);
+  pr_debug("New pt_regs->status: 0x" REG_FMT "\n", regs->status);
+  pr_info("New SEDELEG: 0x" REG_FMT "\n", csr_read(CSR_SEDELEG));
+  pr_info("New pt_regs->SEDELEG: 0x" REG_FMT "\n", regs->sedeleg);
 
   return 0;
 }
@@ -83,10 +87,35 @@ int ioctl_handle_kbe_page_fault(struct kbe_page_fault_t fault)
      * make the system believe we are coming from user-space, and install the
      * bad address we got. */
     pr_info("Handling KBE Page fault request for user vaddr 0x" REG_FMT "\n",
-	    fault.fault_vaddr);
+	    (long unsigned)fault.fault_vaddr);
 
+    pr_info("SEPC: 0x" REG_FMT " (where we called ioctl from)\n", csr_read(CSR_SEPC));
     pr_info("UCAUSE: 0x" REG_FMT "\n", csr_read(CSR_UCAUSE));
+    pr_info("UEPC: 0x" REG_FMT " (insn that made KBE'd page fault)\n", csr_read(CSR_UEPC));
     pr_info("UTVAL: 0x" REG_FMT "\n", csr_read(CSR_UTVAL));
+    pr_info("SSTATUS: 0x" REG_FMT "\n", csr_read(CSR_STATUS));
+
+    pr_info("What the user told us:\n");
+    pr_info("fault.kind = %d\n", fault.kind);
+    pr_info("fault.epc = 0x" REG_FMT "\n", fault.epc);
+    pr_info("fault.fault_vaddr = 0x" REG_FMT "\n",
+	    (long unsigned)fault.fault_vaddr);
+
+    const long unsigned kern_addrs_mask = 0xffffff8000000000UL;
+    if ((fault.epc & kern_addrs_mask) != 0) {
+	pr_warn("Trying to handle a page fault on 0x" REG_FMT " for insn @ 0x" REG_FMT " located in KERNEL SPACE!\n",
+		(long unsigned)fault.epc, (long unsigned)fault.fault_vaddr);
+    }
+
+    if ((fault.fault_vaddr & kern_addrs_mask) != 0) {
+	pr_warn("Trying to handle a page fault for KERNEL PAGE at 0x" REG_FMT " for insn @ 0x" REG_FMT "\n",
+		(long unsigned)fault.fault_vaddr, (long unsigned)fault.epc);
+    }
+
+    if (fault.fault_vaddr == 0) {
+	pr_warn("Given faulting address of NULL! Inst causing fault 0x" REG_FMT "\n",
+		(long unsigned)fault.epc);
+    }
 
     regs.epc = fault.epc;
     regs.badaddr = fault.fault_vaddr;
@@ -114,7 +143,16 @@ int ioctl_handle_kbe_page_fault(struct kbe_page_fault_t fault)
 
     pr_info("Handling page fault by calling do_page_fault\n");
     do_page_fault(&regs);
+    pr_info("do_page_fault completed!\n");
 
+    pr_info("SEPC: 0x" REG_FMT " (should be where we called ioctl from)\n", csr_read(CSR_SEPC));
+    pr_info("UCAUSE: 0x" REG_FMT "\n", csr_read(CSR_UCAUSE));
+    pr_info("UEPC: 0x" REG_FMT " (insn that made KBE'd page fault)\n", csr_read(CSR_UEPC));
+    pr_info("UTVAL: 0x" REG_FMT "\n", csr_read(CSR_UTVAL));
+    pr_info("SSTATUS: 0x" REG_FMT "\n", csr_read(CSR_STATUS));
+
+    show_regs(&regs);
+    pr_info("Exiting KBE page fault request ioctl handler\n");
     return 0;
 }
 

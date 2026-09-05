@@ -6,6 +6,7 @@
 #include <linux/kernel.h>
 #include <linux/cdev.h>
 #include <linux/fs.h>
+#include <linux/sched/debug.h>
 
 #define DEVICE_NAME MODULE_NAME
 
@@ -62,9 +63,10 @@ static long kernel_bypass_ioctl(struct file *filep, unsigned int cmd, unsigned l
 
   /* TODO: Dump all of pt_regs in hex somehow. */
   struct pt_regs *regs = task_pt_regs(current);
-  pr_debug("Before ioctl SEPC: " REG_FMT "\n", csr_read(CSR_EPC));
-  pr_debug("Before ioctl pt_regs->epc: " REG_FMT "\n", regs->epc);
-  pr_debug("pt_regs addr: 0x%016lx\n", (unsigned long)regs);
+  pr_info("================================================================\n");
+  pr_info("Before ioctl SEPC: " REG_FMT "\n", csr_read(CSR_EPC));
+  pr_info("Before ioctl pt_regs->epc: " REG_FMT "\n", regs->epc);
+  pr_info("pt_regs addr: 0x%016lx\n", (unsigned long)regs);
 
   long ret = -ENOTTY;
   switch(cmd) {
@@ -74,11 +76,13 @@ static long kernel_bypass_ioctl(struct file *filep, unsigned int cmd, unsigned l
     break;
   case KERNEL_BYPASS_INSTALL_HANDLER_TARGET: {
     unsigned long target_addr = args;
+    pr_info("Installing handler address into STARGET\n");
     ret = ioctl_install_handler_address(target_addr);
     break;
   }
   case KERNEL_BYPASS_DELEGATE_TRAPS: {
     struct delegate_config_t trap_setup;
+    pr_info("Changing (enable/disable) KBE delegation with SEDELEG\n");
     ret = copy_from_user(&trap_setup, (struct delegate_config_t*) args,
                          sizeof(struct delegate_config_t));
     if (ret) {
@@ -87,11 +91,15 @@ static long kernel_bypass_ioctl(struct file *filep, unsigned int cmd, unsigned l
       break;
     }
 
+    pr_info("Going to %s SEDELEG bits\n", trap_setup.en_flag ? "SET" : "CLEAR");
+    show_regs(regs);
     ret = ioctl_delegate_traps(trap_setup);
+    show_regs(regs);
     break;
   }
   case KERNEL_BYPASS_HANDLE_PAGE_FAULT: {
       struct kbe_page_fault_t page_fault;
+      pr_info("Handling page fault\n");
       ret = copy_from_user(&page_fault, (struct kbe_page_fault_t*) args,
 			   sizeof(struct kbe_page_fault_t));
       if (ret) {
@@ -105,6 +113,7 @@ static long kernel_bypass_ioctl(struct file *filep, unsigned int cmd, unsigned l
   }
   case KERNEL_BYPASS_IOCTL_TIME: {
       struct kbe_ioctl_time_t times = { 0 };
+      pr_info("Doing ioctl time measurement\n");
       ioctl_handle_time(&times);
       ret = copy_to_user((struct kbe_ioctl_time_t*) args, &times,
 			 sizeof(struct kbe_ioctl_time_t));
@@ -116,6 +125,7 @@ static long kernel_bypass_ioctl(struct file *filep, unsigned int cmd, unsigned l
       break;
   }
   case KERNEL_BYPASS_CSR_STATUS:
+    pr_info("Dumping CSR status\n");
     ret = ioctl_csr_status();
     break;
   default:
@@ -124,9 +134,10 @@ static long kernel_bypass_ioctl(struct file *filep, unsigned int cmd, unsigned l
     break;
   }
 
-  pr_debug("After ioctl SEPC: " REG_FMT "\n", csr_read(CSR_EPC));
-  pr_debug("After ioctl pt_regs->epc: " REG_FMT "\n", regs->epc);
-  pr_debug("Finished ioctl!\n");
+  pr_info("After ioctl SEPC: " REG_FMT "\n", csr_read(CSR_EPC));
+  pr_info("After ioctl pt_regs->epc: " REG_FMT "\n", regs->epc);
+  pr_info("Finished ioctl! Returning to: 0x" REG_FMT "\n",
+	  regs->epc);
   return ret;
 }
 

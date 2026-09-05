@@ -50,8 +50,12 @@ void __show_regs(struct pt_regs *regs)
 		pr_cont(" ra : %pS\n", (void *)regs->ra);
 	}
 
-  pr_cont("SEPC: " REG_FMT " UEPC: " REG_FMT "\n",
-          csr_read(CSR_SEPC), csr_read(CSR_UEPC));
+	pr_cont("SEPC: " REG_FMT " UEPC: " REG_FMT " ALREADY HANDLING: " REG_FMT "\n",
+		csr_read(CSR_SEPC), csr_read(CSR_UEPC), csr_read(CSR_SALREADY_HANDLING));
+	/* XXX: DO NOT ENABLE THIS PRINT! ONE OF THESE CSRs IS UNREADABLE BY THE
+	 * KERNEL, CAUSING A SILENT KERNEL PANIC! */
+	/* pr_cont("FFLAGS_CARE: " REG_FMT " FCSR: " REG_FMT "\n", */
+	/* 	csr_read(CSR_FFLAGS_CARE), csr_read(CSR_FCSR)); */
 
 	pr_cont("epc : " REG_FMT " ra : " REG_FMT " sp : " REG_FMT "\n",
 		regs->epc, regs->ra, regs->sp);
