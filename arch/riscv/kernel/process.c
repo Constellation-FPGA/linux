@@ -135,6 +135,10 @@ void start_thread(struct pt_regs *regs, unsigned long pc,
 	}
 	regs->epc = pc;
 	regs->sp = sp;
+	regs->status &= ~SR_UIE;
+	regs->starget = 0;
+	regs->sedeleg = 0;
+	regs->sideleg = 0;
 
 #ifdef CONFIG_64BIT
 	regs->status &= ~SR_UXL;
@@ -164,6 +168,12 @@ void flush_thread(void)
 	kfree(current->thread.vstate.datap);
 	memset(&current->thread.vstate, 0, sizeof(struct __riscv_v_ext_state));
 #endif
+	/* Reset KBE state on process fork */
+	struct pt_regs *regs = task_pt_regs(current);
+	regs->status &= ~SR_UIE;
+	regs->starget = 0;
+	regs->sedeleg = 0;
+	regs->sideleg = 0;
 }
 
 void arch_release_task_struct(struct task_struct *tsk)
