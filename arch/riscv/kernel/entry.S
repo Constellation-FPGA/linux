@@ -198,13 +198,15 @@ SYM_CODE_START_NOALIGN(ret_from_exception)
 	csrw CSR_STATUS, a0
 	csrw CSR_EPC, a2
 
-  /* Restore the fflags_care register after handler based on contents of pt_reg.
-   * NOTE: The particular value we write may be different than what we saved in
-   * handle_exception because the user modified pt_regs through ucontext.
-   * FPSpy uses this to disable FP exceptions for a single cycle while a
-   * breakpoint is inserted to allow the instruction to "replay". */
-  REG_L x1,  PT_FFLAGS_CARE(sp)
-  csrw  CSR_FFLAGS_CARE, x1
+	/* Restore the fflags_care register after handler based on contents of
+	 * pt_reg.
+	 *
+	 * NOTE: The particular value we write may be different than what we
+	 * saved in handle_exception because the user modified pt_regs through
+	 * ucontext. FPSpy uses this to disable FP exceptions for a single cycle
+	 * while a breakpoint is inserted to allow the instruction to "replay". */
+	REG_L x1, PT_FFLAGS_CARE(sp)
+	csrw CSR_FFLAGS_CARE, x1
 
 	REG_L x1,  PT_RA(sp)
 	REG_L x3,  PT_GP(sp)
