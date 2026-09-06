@@ -87,6 +87,11 @@ _save_context:
 	frcsr x31
 	REG_S x31, PT_FCSR(sp)
 
+	/*
+	 * Disable Kernel-Bypass Exceptions (KBEs) when inside the kernel, as a
+	 * sanity barrier.
+	 *
+	 * Disable KBEs by clearing the "chicken bit" in SSTATUS. */
 	ori t0, t0, SR_UIE
 boot_runtime_xcpt:
 	/*
@@ -95,8 +100,6 @@ boot_runtime_xcpt:
 	 *
 	 * Disable the FPU/Vector to detect illegal usage of floating point
 	 * or vector in kernel space.
-	 *
-	 * Disable KBEs by clearing the "chicken bit" in SSTATUS.
 	 */
 	li s2, SR_SUM | SR_FS_VS
 	or t0, t0, s2
@@ -172,6 +175,22 @@ SYM_CODE_START_NOALIGN(ret_from_exception)
 	andi s0, s0, SR_SPP
 #endif
 	bnez s0, 1f
+	/* Any code from here to the next label will only run when returning
+	 * to user-mode. */
+
+	/* Re-enable KBEs if they were enabled before or this exception
+	 * (syscall) enabled them. The KBE ioctl directly writes CSR_STATUS.
+	 * So if KBEs were disabled before and are now enabled, they should
+	 * remain enabled. */
+	REG_L s0, PT_STATUS(sp)
+	csrr t0, CSR_STATUS
+	andi t0, t0, SR_UIE // Only keep UIE "chicken bit"
+	or s0, s0, t0 // Set UIE bit in value to restore if it was set
+	csrw CSR_USCRATCH, s0
+	/* At this point, CSR_USCRATCH ***MUST*** have the final value we are
+	 * going to put into CSR_STATUS before we return! Otherwise, the CSR
+	 * dance at the end of this is will not work and we will bork the
+	 * machine.*/
 
 	/* Save unwound kernel stack pointer in thread_info */
 	addi s0, sp, PT_SIZE_ON_STACK
@@ -216,21 +235,6 @@ SYM_CODE_START_NOALIGN(ret_from_exception)
 	 * while a breakpoint is inserted to allow the instruction to "replay". */
 	REG_L x1, PT_FFLAGS_CARE(sp)
 	csrw CSR_FFLAGS_CARE, x1
-
-	/* Re-enable KBEs if they were enabled before or this exception
-	 * (syscall) enabled them. The KBE ioctl directly writes CSR_STATUS.
-	 * So if KBEs were disabled before and are now enabled, they should
-	 * remain enabled. */
-	/* XXX: We ***RELY*** on a0 still holding CSR_STATUS at this point!
-	 * a2 = x12, which is restored for us later. */
-	csrr a2, CSR_STATUS
-	andi a2, a2, SR_UIE // Only keep UIE "chicken bit"
-	or a0, a0, a2 // Set UIE bit in value to restore if it was set
-	csrw CSR_USCRATCH, a0
-	/* At this point, CSR_SCRATCH ***MUST*** have the final value we are
-	 * going to put into CSR_STATUS before we return! Otherwise, the CSR
-	 * dance at the end of this is will not work and we will bork the
-	 * machine.*/
 
 	REG_L x1,  PT_RA(sp)
 	REG_L x3,  PT_GP(sp)
