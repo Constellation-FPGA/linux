@@ -38,18 +38,21 @@ int ioctl_delegate_traps(struct pt_regs *regs, struct delegate_config_t trap_set
   pr_debug("SSTATUS: 0x" REG_FMT "\n", csr_read(CSR_STATUS));
 
   pr_debug("pt_regs->status: " REG_FMT "\n", regs->status);
+  pr_debug("current->thread.uie: %s\n",
+	   current->thread.uie != 0 ? "ON" : "OFF");
+
   switch (trap_setup.en_flag) {
   case 0:
     pr_info("Clearing/Disabling SEDELEG\n");
     regs->sedeleg &= ~trap_setup.trap_mask;
     /* XXX: DISABLE UIE! */
-    regs->status &= ~SR_UIE;
+    current->thread.uie = false;
     break;
   case 1:
     pr_info("Setting/Enabling SEDELEG\n");
     regs->sedeleg |= trap_setup.trap_mask;
     /* XXX: ENABLE UIE! */
-    regs->status |= SR_UIE;
+    current->thread.uie = true;
     break;
   default:
     pr_alert("Invalid trap delegation enable option! %ud is unsupported! Doing nothing\n",
@@ -60,6 +63,9 @@ int ioctl_delegate_traps(struct pt_regs *regs, struct delegate_config_t trap_set
   pr_debug("New SEDELEG: " REG_FMT "\n", regs->sedeleg);
   pr_debug("New SSTATUS: " REG_FMT "\n", csr_read(CSR_STATUS));
   pr_debug("New pt_regs->status: 0x" REG_FMT "\n", regs->status);
+  pr_debug("New current->thread.uie: %s\n",
+	   current->thread.uie != 0 ? "ON" : "OFF");
+
   pr_info("New SEDELEG: 0x" REG_FMT "\n", csr_read(CSR_SEDELEG));
   pr_info("New pt_regs->SEDELEG: 0x" REG_FMT "\n", regs->sedeleg);
 
@@ -180,5 +186,8 @@ int ioctl_csr_status(void)
   pr_info("UEPC: 0x" REG_FMT "\n", csr_read(CSR_UEPC));
   pr_info("UCAUSE: 0x" REG_FMT "\n", csr_read(CSR_UCAUSE));
   pr_info("UTVAL: 0x" REG_FMT "\n", csr_read(CSR_UTVAL));
+
+  struct thread_struct t = current->thread;
+  pr_info("current->thread.uie: %s\n", t.uie != 0 ? "ON" : "OFF");
   return 0;
 }

@@ -141,6 +141,8 @@ static long kernel_bypass_ioctl(struct file *filep, unsigned int cmd, unsigned l
 
   pr_info("After ioctl SEPC: " REG_FMT "\n", csr_read(CSR_EPC));
   pr_info("After ioctl pt_regs->epc: " REG_FMT "\n", regs->epc);
+  pr_debug("After ioctl current->thread.uie: %s\n",
+	   current->thread.uie != 0 ? "ON" : "OFF");
   pr_info("Finished ioctl! Returning to: 0x" REG_FMT "\n",
 	  regs->epc);
   return ret;

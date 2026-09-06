@@ -35,11 +35,9 @@ SYM_CODE_START(handle_exception)
 
 	/* KBE Errata: Hardware will let a fault in the kernel be delivered as
 	 * a KBE back to userspace. SR_UIE is the gate to enable/disable KBEs.
-	 * Turn off KBEs upon entrance to the kernel. Save the old CSR_STATUS to
-	 * CSR_USCRATCH so that we can recover it later to put in pt_regs. */
-	csrw CSR_USCRATCH, x1
-	csrr x1, CSR_STATUS
-	csrrw x1, CSR_USCRATCH, x1
+	 * Turn off KBEs upon entrance to the kernel.
+	 * thread_struct is changed when KBEs are enabled/disabled so
+	 * unconditionally clearing it here is fine. */
 	csrci CSR_STATUS, SR_UIE
 
 	/*
@@ -115,16 +113,6 @@ boot_runtime_xcpt:
 
 	REG_L s0, TASK_TI_USER_SP(tp)
 	csrrc s1, CSR_STATUS, t0
-	/* KBE Errata: Recover the saved UIE value we had immediately on
-	 * entrance to the kernel. Then put into the register we put
-	 * CSR_STATUS into so it can be saved into pt_regs to remember if the
-	 * user program enabled KBEs. If they were enabled, then we re-enable
-	 * them upon exiting the kernel. */
-	csrr s6, CSR_USCRATCH
-	andi s6, s6, SR_UIE
-	or s1, s1, s6
-	csrw CSR_USCRATCH, 0
-	/* End of KBE Errata. */
 	csrr s2, CSR_EPC
 	csrr s3, CSR_TVAL
 	csrr s4, CSR_CAUSE
@@ -213,7 +201,7 @@ SYM_CODE_START_NOALIGN(ret_from_exception)
 	 * structures again.
 	 */
 	csrw CSR_SCRATCH, tp
-1:
+
 	/* Needs to be done before restoring CSR_STATUS, because UIE might be
 	 * set by writing the CSR, enabling KBEs. We better have something
 	 * sensible in hardware by that point, or we are not going to have a
@@ -225,6 +213,19 @@ SYM_CODE_START_NOALIGN(ret_from_exception)
 	csrw CSR_SEDELEG, s1
 	csrw CSR_SIDELEG, s2
 
+	/* The fact that UIE is set (enabling KBEs) is stored in the task's
+	 * thread_struct, which is preserved across all exceptions. So if the
+	 * user enables them in the KBE ioctl, they stay enabled until the user
+	 * explicitly disables them. We just keep reloading it and putting it
+	 * back into UIE. */
+	li t0, TASK_THREAD_RA
+	add t0, tp, t0
+	REG_L s1, TASK_THREAD_UIE_RA(t0)
+	beqz s1, 1f // If UIE is false/unset/0, skip setting & saving it
+	REG_L s0, PT_STATUS(sp)
+	ori   s0, s0, SR_UIE
+	REG_S s0, PT_STATUS(sp)
+1:
 	REG_L a0, PT_STATUS(sp)
 	/*
 	 * The current load reservation is effectively part of the processor's

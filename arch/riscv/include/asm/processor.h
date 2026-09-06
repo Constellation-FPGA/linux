@@ -92,6 +92,8 @@ struct thread_struct {
 	unsigned long usscratch;
 	unsigned long utval;
 	unsigned long salready_handling;
+	/* Technically a bool, but for ease of use with REG_L in entry.s */
+	unsigned long uie;
 };
 
 /* Whitelist the fstate from the task_struct for hardened usercopy */
