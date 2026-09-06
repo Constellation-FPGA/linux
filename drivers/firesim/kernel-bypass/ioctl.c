@@ -44,13 +44,13 @@ int ioctl_delegate_traps(struct pt_regs *regs, struct delegate_config_t trap_set
   switch (trap_setup.en_flag) {
   case 0:
     pr_info("Clearing/Disabling SEDELEG\n");
-    regs->sedeleg &= ~trap_setup.trap_mask;
+    current->thread.sedeleg &= ~trap_setup.trap_mask;
     /* XXX: DISABLE UIE! */
     current->thread.uie = false;
     break;
   case 1:
     pr_info("Setting/Enabling SEDELEG\n");
-    regs->sedeleg |= trap_setup.trap_mask;
+    current->thread.sedeleg |= trap_setup.trap_mask;
     /* XXX: ENABLE UIE! */
     current->thread.uie = true;
     break;
@@ -189,5 +189,8 @@ int ioctl_csr_status(void)
 
   struct thread_struct t = current->thread;
   pr_info("current->thread.uie: %s\n", t.uie != 0 ? "ON" : "OFF");
+  pr_info("current->thread.sedeleg: 0x" REG_FMT "\n", t.sedeleg);
+  pr_info("current->thread.sideleg: 0x" REG_FMT "\n", t.sideleg);
+
   return 0;
 }

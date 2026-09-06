@@ -39,6 +39,7 @@ SYM_CODE_START(handle_exception)
 	 * thread_struct is changed when KBEs are enabled/disabled so
 	 * unconditionally clearing it here is fine. */
 	csrci CSR_STATUS, SR_UIE
+	csrw CSR_SEDELEG, zero
 
 	/*
 	 * If coming from userspace, preserve the user thread pointer and load
@@ -207,10 +208,8 @@ SYM_CODE_START_NOALIGN(ret_from_exception)
 	 * sensible in hardware by that point, or we are not going to have a
 	 * good time. */
 	REG_L s0, PT_STARGET(sp)
-	REG_L s1, PT_SEDELEG(sp)
 	REG_L s2, PT_SIDELEG(sp)
 	csrw CSR_STARGET, s0
-	csrw CSR_SEDELEG, s1
 	csrw CSR_SIDELEG, s2
 
 	/* The fact that UIE is set (enabling KBEs) is stored in the task's
@@ -220,10 +219,12 @@ SYM_CODE_START_NOALIGN(ret_from_exception)
 	 * back into UIE. */
 	li t0, TASK_THREAD_RA
 	add t0, tp, t0
+	REG_L s0, TASK_THREAD_SEDELEG_RA(t0)
+	csrw CSR_SEDELEG, s0
 	REG_L s1, TASK_THREAD_UIE_RA(t0)
 	beqz s1, 1f // If UIE is false/unset/0, skip setting & saving it
 	REG_L s0, PT_STATUS(sp)
-	ori   s0, s0, SR_UIE
+	ori s0, s0, SR_UIE
 	REG_S s0, PT_STATUS(sp)
 1:
 	REG_L a0, PT_STATUS(sp)
@@ -408,8 +409,6 @@ SYM_FUNC_START(__switch_to)
 	REG_S s11, TASK_THREAD_S11_RA(a3)
 
 	/* Save prev proc's kernel-bypass info */
-	csrr s11, CSR_SEDELEG
-	REG_S s11, TASK_THREAD_SEDELEG_RA(a3) ;
 	csrr s11, CSR_SIDELEG
 	REG_S s11, TASK_THREAD_SIDELEG_RA(a3) ;
 	csrr s11, CSR_STARGET
@@ -434,8 +433,6 @@ SYM_FUNC_START(__switch_to)
 	/* Restore context from next->thread */
 
 	/* Restore next proc's kernel-bypass info */
-	REG_L s11, TASK_THREAD_SEDELEG_RA(a4) ;
-	csrw CSR_SEDELEG, s11
 	REG_L s11, TASK_THREAD_SIDELEG_RA(a4) ;
 	csrw CSR_SIDELEG, s11
 	REG_L s11, TASK_THREAD_STARGET_RA(a4) ;
