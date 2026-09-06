@@ -35,8 +35,8 @@ struct delegate_config_t {
 #define KERNEL_BYPASS_DELEGATE_TRAPS _IOW(KBE_IOCTL_MAGIC, 0x32, struct delegate_config_t*)
 #define KERNEL_BYPASS_CSR_STATUS _IO(KBE_IOCTL_MAGIC, 0x33)
 
-int ioctl_install_handler_address(unsigned long target_addr);
-int ioctl_delegate_traps(struct delegate_config_t trap_setup);
+int ioctl_install_handler_address(struct pt_regs *regs, unsigned long target_addr);
+int ioctl_delegate_traps(struct pt_regs *regs, struct delegate_config_t trap_setup);
 int ioctl_csr_status(void);
 
 /** Getting KBE'd page faults back into the kernel. */
@@ -61,7 +61,7 @@ struct kbe_page_fault_t {
 
 #define KERNEL_BYPASS_HANDLE_PAGE_FAULT _IOW(KBE_IOCTL_MAGIC, 0x34, struct kbe_page_fault_t*)
 
-int ioctl_handle_kbe_page_fault(struct kbe_page_fault_t fault);
+int ioctl_handle_kbe_page_fault(struct pt_regs *regs, struct kbe_page_fault_t fault);
 
 struct kbe_ioctl_time_t {
     __u64 hit_kernel;

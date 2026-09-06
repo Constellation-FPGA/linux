@@ -20,37 +20,35 @@ extern void do_page_fault(struct pt_regs *regs);
  * within hardware, bypassing the kernel entirely. HOWEVER, the pipelined
  * handler STILL relies on the kernel to provide virtual address translation.
  * How this will play together with things like page faults, I don't know yet. */
-int ioctl_install_handler_address(unsigned long target_addr)
+int ioctl_install_handler_address(struct pt_regs *regs,
+				  unsigned long target_addr)
 {
   pr_info("Setting handler target to addr 0x" REG_FMT "\n", target_addr);
-  csr_write(CSR_STARGET, target_addr);
-  pr_debug("New STARGET: " REG_FMT "\n", csr_read(CSR_STARGET));
+  regs->starget = target_addr;
+  pr_debug("New STARGET: " REG_FMT "\n", regs->starget);
   return 0;
 }
 
 /** Enable/Disable a particular pattern of traps. */
-int ioctl_delegate_traps(struct delegate_config_t trap_setup)
+int ioctl_delegate_traps(struct pt_regs *regs, struct delegate_config_t trap_setup)
 {
   pr_info("Enable/Disable: %s\n", trap_setup.en_flag == 1 ? "Enable" : "Disable");
   pr_info("Trap Delegation Mask: 0x" REG_FMT "\n",
 	  (unsigned long)trap_setup.trap_mask);
   pr_debug("SSTATUS: 0x" REG_FMT "\n", csr_read(CSR_STATUS));
 
-  struct pt_regs *regs = task_pt_regs(current);
   pr_debug("pt_regs->status: " REG_FMT "\n", regs->status);
   switch (trap_setup.en_flag) {
   case 0:
     pr_info("Clearing/Disabling SEDELEG\n");
-    csr_clear(CSR_SEDELEG, trap_setup.trap_mask);
+    regs->sedeleg &= ~trap_setup.trap_mask;
     /* XXX: DISABLE UIE! */
-    /* regs->status &= 0xFFFFFFFFFFFFFFFE; */
     regs->status &= ~SR_UIE;
     break;
   case 1:
     pr_info("Setting/Enabling SEDELEG\n");
-    csr_set(CSR_SEDELEG, trap_setup.trap_mask);
+    regs->sedeleg |= trap_setup.trap_mask;
     /* XXX: ENABLE UIE! */
-    /* regs->status |= 0x0000000000000001; */
     regs->status |= SR_UIE;
     break;
   default:
@@ -59,8 +57,7 @@ int ioctl_delegate_traps(struct delegate_config_t trap_setup)
     break;
   }
 
-  unsigned long new_sedeleg = csr_read(CSR_SEDELEG);
-  pr_debug("New SEDELEG: " REG_FMT "\n", new_sedeleg);
+  pr_debug("New SEDELEG: " REG_FMT "\n", regs->sedeleg);
   pr_debug("New SSTATUS: " REG_FMT "\n", csr_read(CSR_STATUS));
   pr_debug("New pt_regs->status: 0x" REG_FMT "\n", regs->status);
   pr_info("New SEDELEG: 0x" REG_FMT "\n", csr_read(CSR_SEDELEG));
@@ -73,13 +70,14 @@ int ioctl_delegate_traps(struct delegate_config_t trap_setup)
  * User program that has enabled KBEs for page faults is requesting the kernel
  * to handle some part of the page fault.
  */
-int ioctl_handle_kbe_page_fault(struct kbe_page_fault_t fault)
+int ioctl_handle_kbe_page_fault(struct pt_regs *real_regs,
+				struct kbe_page_fault_t fault)
 {
-    struct pt_regs regs = {0};
+    struct pt_regs fake_regs = {0};
 
     /* Force regs to be clean and zero, just in case the stack has garbage at
      * the location where regs ended up. */
-    memset(&regs, 0, sizeof(struct pt_regs));
+    memcpy(&fake_regs, real_regs, sizeof(struct pt_regs));
 
     /* Build a somewhat fake pt_regs and pass it off to the normal page fault
      * handler.
@@ -97,7 +95,8 @@ int ioctl_handle_kbe_page_fault(struct kbe_page_fault_t fault)
 
     pr_info("What the user told us:\n");
     pr_info("fault.kind = %d\n", fault.kind);
-    pr_info("fault.epc = 0x" REG_FMT "\n", fault.epc);
+    pr_info("fault.epc = 0x" REG_FMT "\n",
+	    (unsigned long)fault.epc);
     pr_info("fault.fault_vaddr = 0x" REG_FMT "\n",
 	    (long unsigned)fault.fault_vaddr);
 
@@ -117,32 +116,34 @@ int ioctl_handle_kbe_page_fault(struct kbe_page_fault_t fault)
 		(long unsigned)fault.epc);
     }
 
-    regs.epc = fault.epc;
-    regs.badaddr = fault.fault_vaddr;
+    fake_regs.epc = fault.epc;
+    fake_regs.badaddr = fault.fault_vaddr;
 
     switch(fault.kind) {
     case CODE:
-	regs.cause = EXC_INST_PAGE_FAULT;
+	fake_regs.cause = EXC_INST_PAGE_FAULT;
 	pr_info("Handling Code/INSTruction page fault\n");
 	break;
     case LOAD:
-	regs.cause = EXC_LOAD_PAGE_FAULT;
+	fake_regs.cause = EXC_LOAD_PAGE_FAULT;
 	pr_info("Handling LOAD page fault request\n");
 	break;
     case STORE:
-	regs.cause = EXC_STORE_PAGE_FAULT;
+	fake_regs.cause = EXC_STORE_PAGE_FAULT;
 	pr_info("Handling STORE page fault request\n");
 	break;
     default:
-	die(&regs, "Unknown type of KBE page fault request!");
+	die(&fake_regs, "Unknown type of KBE page fault request!");
 	break;
     }
 
     // Explicitly denote that the previous privilege mode was user-mode.
-    regs.status = regs.status & SR_UPP;
+    fake_regs.status &= SR_UPP;
+
+    show_regs(&fake_regs);
 
     pr_info("Handling page fault by calling do_page_fault\n");
-    do_page_fault(&regs);
+    do_page_fault(&fake_regs);
     pr_info("do_page_fault completed!\n");
 
     pr_info("SEPC: 0x" REG_FMT " (should be where we called ioctl from)\n", csr_read(CSR_SEPC));
@@ -151,7 +152,7 @@ int ioctl_handle_kbe_page_fault(struct kbe_page_fault_t fault)
     pr_info("UTVAL: 0x" REG_FMT "\n", csr_read(CSR_UTVAL));
     pr_info("SSTATUS: 0x" REG_FMT "\n", csr_read(CSR_STATUS));
 
-    show_regs(&regs);
+    show_regs(&fake_regs);
     pr_info("Exiting KBE page fault request ioctl handler\n");
     return 0;
 }

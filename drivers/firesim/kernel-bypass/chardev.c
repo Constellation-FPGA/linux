@@ -47,11 +47,16 @@ static int kernel_bypass_open(struct inode *inode, struct file *filep)
 static int kernel_bypass_release(struct inode *inode, struct file *filep)
 {
   int rc = 0;
+  struct pt_regs *regs = task_pt_regs(current);
+
   pr_info("Closed the Kernel-Bypass Exception character device file\n");
   pr_info("Resetting Kernel-Bypass Exception CSRs!\n");
-  rc = ioctl_install_handler_address(0UL);
+
+  rc = ioctl_install_handler_address(regs, 0UL);
+
   struct delegate_config_t reset = {.en_flag = 0, .trap_mask = -1UL};
-  rc = ioctl_delegate_traps(reset);
+  rc = ioctl_delegate_traps(regs, reset);
+
   pr_info("Closed Kernel-Bypass Exception character device file %s\n",
           rc == 0 ? "succesfully" : "failed");
   return rc;
@@ -77,7 +82,7 @@ static long kernel_bypass_ioctl(struct file *filep, unsigned int cmd, unsigned l
   case KERNEL_BYPASS_INSTALL_HANDLER_TARGET: {
     unsigned long target_addr = args;
     pr_info("Installing handler address into STARGET\n");
-    ret = ioctl_install_handler_address(target_addr);
+    ret = ioctl_install_handler_address(regs, target_addr);
     break;
   }
   case KERNEL_BYPASS_DELEGATE_TRAPS: {
@@ -93,7 +98,7 @@ static long kernel_bypass_ioctl(struct file *filep, unsigned int cmd, unsigned l
 
     pr_info("Going to %s SEDELEG bits\n", trap_setup.en_flag ? "SET" : "CLEAR");
     show_regs(regs);
-    ret = ioctl_delegate_traps(trap_setup);
+    ret = ioctl_delegate_traps(regs, trap_setup);
     show_regs(regs);
     break;
   }
@@ -108,7 +113,7 @@ static long kernel_bypass_ioctl(struct file *filep, unsigned int cmd, unsigned l
 	  break;
       }
 
-      ret = ioctl_handle_kbe_page_fault(page_fault);
+      ret = ioctl_handle_kbe_page_fault(regs, page_fault);
       break;
   }
   case KERNEL_BYPASS_IOCTL_TIME: {

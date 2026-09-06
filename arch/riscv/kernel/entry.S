@@ -117,6 +117,13 @@ boot_runtime_xcpt:
 	REG_S s4, PT_CAUSE(sp)
 	REG_S s5, PT_TP(sp)
 
+	csrr s0, CSR_STARGET
+	csrr s1, CSR_SEDELEG
+	csrr s2, CSR_SIDELEG
+	REG_S s0, PT_STARGET(sp)
+	REG_S s1, PT_SEDELEG(sp)
+	REG_S s2, PT_SIDELEG(sp)
+
 	/* Save the fflags_care register of this program and clear the
 	 * fflags_care register while inside the kernel. */
 	li t0, FFLAGS_CLEAR
@@ -178,20 +185,6 @@ SYM_CODE_START_NOALIGN(ret_from_exception)
 	/* Any code from here to the next label will only run when returning
 	 * to user-mode. */
 
-	/* Re-enable KBEs if they were enabled before or this exception
-	 * (syscall) enabled them. The KBE ioctl directly writes CSR_STATUS.
-	 * So if KBEs were disabled before and are now enabled, they should
-	 * remain enabled. */
-	REG_L s0, PT_STATUS(sp)
-	csrr t0, CSR_STATUS
-	andi t0, t0, SR_UIE // Only keep UIE "chicken bit" of current status
-	or s0, s0, t0 // Set UIE bit in value to restore if it was set
-	REG_S s0, PT_STATUS(sp)
-	/* At this point, if UIE was enabled by the user through an ioctl which
-	 * modified CSR_STATUS directly, that update is reflected into the
-	 * stack location holding the struct pt_regs. A subsequent load will
-	 * pull in that change and install it into the HW. */
-
 	/* Save unwound kernel stack pointer in thread_info */
 	addi s0, sp, PT_SIZE_ON_STACK
 	REG_S s0, TASK_TI_KERNEL_SP(tp)
@@ -202,6 +195,17 @@ SYM_CODE_START_NOALIGN(ret_from_exception)
 	 */
 	csrw CSR_SCRATCH, tp
 1:
+	/* Needs to be done before restoring CSR_STATUS, because UIE might be
+	 * set by writing the CSR, enabling KBEs. We better have something
+	 * sensible in hardware by that point, or we are not going to have a
+	 * good time. */
+	REG_L s0, PT_STARGET(sp)
+	REG_L s1, PT_SEDELEG(sp)
+	REG_L s2, PT_SIDELEG(sp)
+	csrw CSR_STARGET, s0
+	csrw CSR_SEDELEG, s1
+	csrw CSR_SIDELEG, s2
+
 	REG_L a0, PT_STATUS(sp)
 	/*
 	 * The current load reservation is effectively part of the processor's
