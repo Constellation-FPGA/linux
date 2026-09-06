@@ -33,6 +33,15 @@
 SYM_CODE_START(handle_exception)
 	CYCLES_TO_USSCRATCH
 
+	/* KBE Errata: Hardware will let a fault in the kernel be delivered as
+	 * a KBE back to userspace. SR_UIE is the gate to enable/disable KBEs.
+	 * Turn off KBEs upon entrance to the kernel. Save the old CSR_STATUS to
+	 * CSR_USCRATCH so that we can recover it later to put in pt_regs. */
+	csrw CSR_USCRATCH, x1
+	csrr x1, CSR_STATUS
+	csrrw x1, CSR_USCRATCH, x1
+	csrci CSR_STATUS, SR_UIE
+
 	/*
 	 * If coming from userspace, preserve the user thread pointer and load
 	 * the kernel thread pointer.  If we came from the kernel, the scratch
@@ -106,6 +115,16 @@ boot_runtime_xcpt:
 
 	REG_L s0, TASK_TI_USER_SP(tp)
 	csrrc s1, CSR_STATUS, t0
+	/* KBE Errata: Recover the saved UIE value we had immediately on
+	 * entrance to the kernel. Then put into the register we put
+	 * CSR_STATUS into so it can be saved into pt_regs to remember if the
+	 * user program enabled KBEs. If they were enabled, then we re-enable
+	 * them upon exiting the kernel. */
+	csrr s6, CSR_USCRATCH
+	andi s6, s6, SR_UIE
+	or s1, s1, s6
+	csrw CSR_USCRATCH, 0
+	/* End of KBE Errata. */
 	csrr s2, CSR_EPC
 	csrr s3, CSR_TVAL
 	csrr s4, CSR_CAUSE
