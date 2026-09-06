@@ -62,6 +62,8 @@ _save_context:
 	REG_S x5,  PT_T0(sp)
 	save_from_x6_to_x31
 
+	li t0, 0
+
 	/* HACK: If [MS]STATUS.FS states that FP support is either off or
 	 * initializing, then we should not save any FP state, since FP support may
 	 * not have been turned on yet. In this case, the and-mask will only keep
@@ -74,6 +76,9 @@ _save_context:
 	and x31, x31, x30
 	beqz x31, boot_runtime_xcpt
 
+	/* Anything between here and boot_runtime_xcpt is run during normal
+	 * execution and skipped at boot. */
+
 	/* Read from fcsr BEFORE disabling FP support. If you do not do this, an
 	 * illegal instruction exception will be raised.
 	 *
@@ -82,6 +87,7 @@ _save_context:
 	frcsr x31
 	REG_S x31, PT_FCSR(sp)
 
+	ori t0, t0, SR_UIE
 boot_runtime_xcpt:
 	/*
 	 * Disable user-mode memory access as it should only be set in the
@@ -92,7 +98,8 @@ boot_runtime_xcpt:
 	 *
 	 * Disable KBEs by clearing the "chicken bit" in SSTATUS.
 	 */
-	li t0, SR_SUM | SR_FS_VS | SR_UIE
+	li s2, SR_SUM | SR_FS_VS
+	or t0, t0, s2
 
 	REG_L s0, TASK_TI_USER_SP(tp)
 	csrrc s1, CSR_STATUS, t0
@@ -197,13 +204,6 @@ SYM_CODE_START_NOALIGN(ret_from_exception)
 	REG_L  a2, PT_EPC(sp)
 	REG_SC x0, a2, PT_EPC(sp)
 
-	/* Re-enable KBEs if they were enabled before or this exception
-	 * (syscall) enabled them. The KBE ioctl directly writes CSR_STATUS.
-	 * So if KBEs were disabled before and are now enabled, they should
-	 * remain enabled. */
-	csrr a1, CSR_STATUS
-	andi a1, a1, SR_UIE // Only keep UIE "chicken bit"
-	or a0, a0, a1 // Set UIE bit in value to restore if it was set
 	csrw CSR_STATUS, a0
 	csrw CSR_EPC, a2
 
@@ -217,6 +217,21 @@ SYM_CODE_START_NOALIGN(ret_from_exception)
 	REG_L x1, PT_FFLAGS_CARE(sp)
 	csrw CSR_FFLAGS_CARE, x1
 
+	/* Re-enable KBEs if they were enabled before or this exception
+	 * (syscall) enabled them. The KBE ioctl directly writes CSR_STATUS.
+	 * So if KBEs were disabled before and are now enabled, they should
+	 * remain enabled. */
+	/* XXX: We ***RELY*** on a0 still holding CSR_STATUS at this point!
+	 * a2 = x12, which is restored for us later. */
+	csrr a2, CSR_STATUS
+	andi a2, a2, SR_UIE // Only keep UIE "chicken bit"
+	or a0, a0, a2 // Set UIE bit in value to restore if it was set
+	csrw CSR_USCRATCH, a0
+	/* At this point, CSR_SCRATCH ***MUST*** have the final value we are
+	 * going to put into CSR_STATUS before we return! Otherwise, the CSR
+	 * dance at the end of this is will not work and we will bork the
+	 * machine.*/
+
 	REG_L x1,  PT_RA(sp)
 	REG_L x3,  PT_GP(sp)
 	REG_L x4,  PT_TP(sp)
@@ -227,6 +242,11 @@ SYM_CODE_START_NOALIGN(ret_from_exception)
 
 	CYCLES_TO_USSCRATCH
 
+	/* This MUST come last so that we do not have any memory operations
+	 * after this! */
+	csrrw x1, CSR_USCRATCH, x1
+	csrw CSR_STATUS, x1
+	csrrw x1, CSR_USCRATCH, zero
 #ifdef CONFIG_RISCV_M_MODE
 	mret
 #else
