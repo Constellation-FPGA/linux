@@ -245,6 +245,10 @@ void handle_page_fault(struct pt_regs *regs)
 	if (kprobe_page_fault(regs, cause))
 		return;
 
+	if (csr_read(CSR_UEPC) >= PAGE_OFFSET) {
+	    die(regs, "UEPC is crazy!");
+	}
+
 	/*
 	 * Fault-in kernel-space virtual memory on-demand.
 	 * The 'reference' page table is init_mm.pgd.
