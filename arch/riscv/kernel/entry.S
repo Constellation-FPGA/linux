@@ -184,13 +184,13 @@ SYM_CODE_START_NOALIGN(ret_from_exception)
 	 * remain enabled. */
 	REG_L s0, PT_STATUS(sp)
 	csrr t0, CSR_STATUS
-	andi t0, t0, SR_UIE // Only keep UIE "chicken bit"
+	andi t0, t0, SR_UIE // Only keep UIE "chicken bit" of current status
 	or s0, s0, t0 // Set UIE bit in value to restore if it was set
-	csrw CSR_USCRATCH, s0
-	/* At this point, CSR_USCRATCH ***MUST*** have the final value we are
-	 * going to put into CSR_STATUS before we return! Otherwise, the CSR
-	 * dance at the end of this is will not work and we will bork the
-	 * machine.*/
+	REG_S s0, PT_STATUS(sp)
+	/* At this point, if UIE was enabled by the user through an ioctl which
+	 * modified CSR_STATUS directly, that update is reflected into the
+	 * stack location holding the struct pt_regs. A subsequent load will
+	 * pull in that change and install it into the HW. */
 
 	/* Save unwound kernel stack pointer in thread_info */
 	addi s0, sp, PT_SIZE_ON_STACK
@@ -246,11 +246,6 @@ SYM_CODE_START_NOALIGN(ret_from_exception)
 
 	CYCLES_TO_USSCRATCH
 
-	/* This MUST come last so that we do not have any memory operations
-	 * after this! */
-	csrrw x1, CSR_USCRATCH, x1
-	csrw CSR_STATUS, x1
-	csrrw x1, CSR_USCRATCH, zero
 #ifdef CONFIG_RISCV_M_MODE
 	mret
 #else
