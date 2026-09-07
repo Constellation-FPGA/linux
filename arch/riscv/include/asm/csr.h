@@ -13,6 +13,7 @@
 #define SR_UIE		_AC(0x00000001, UL) /* User Interrupt Enable */
 #define SR_SIE		_AC(0x00000002, UL) /* Supervisor Interrupt Enable */
 #define SR_MIE		_AC(0x00000008, UL) /* Machine Interrupt Enable */
+#define SR_UPIE		_AC(0x00000010, UL) /* Previous User IE */
 #define SR_SPIE		_AC(0x00000020, UL) /* Previous Supervisor IE */
 #define SR_MPIE		_AC(0x00000080, UL) /* Previous Machine IE */
 #define SR_UPP		_AC(0x00000000, UL) /* Previously User */
