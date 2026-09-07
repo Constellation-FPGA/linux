@@ -33,9 +33,13 @@ int ioctl_install_handler_address(struct pt_regs *regs,
 int ioctl_delegate_traps(struct pt_regs *regs, struct delegate_config_t trap_setup)
 {
   pr_info("Enable/Disable: %s\n", trap_setup.en_flag == 1 ? "Enable" : "Disable");
-  pr_info("Trap Delegation Mask: 0x" REG_FMT "\n",
+  pr_debug("Trap Delegation Mask: 0x" REG_FMT "\n",
 	  (unsigned long)trap_setup.trap_mask);
   pr_debug("SSTATUS: 0x" REG_FMT "\n", csr_read(CSR_STATUS));
+  pr_debug("Before current->thread.sedeleg: 0x" REG_FMT "\n",
+	  current->thread.sedeleg);
+  pr_info("User changing SEDELEG: 0x" REG_FMT " -> 0x" REG_FMT "\n",
+	  current->thread.sedeleg, (unsigned long)trap_setup.trap_mask);
 
   pr_debug("pt_regs->status: " REG_FMT "\n", regs->status);
   pr_debug("current->thread.uie: %s\n",
@@ -60,14 +64,18 @@ int ioctl_delegate_traps(struct pt_regs *regs, struct delegate_config_t trap_set
     break;
   }
 
-  pr_debug("New SEDELEG: " REG_FMT "\n", regs->sedeleg);
+  pr_debug("SEDELEG: " REG_FMT "\n", csr_read(CSR_SEDELEG));
+  pr_info("New current->thread.sedeleg: 0x" REG_FMT "\n",
+	   current->thread.sedeleg);
   pr_debug("New SSTATUS: " REG_FMT "\n", csr_read(CSR_STATUS));
   pr_debug("New pt_regs->status: 0x" REG_FMT "\n", regs->status);
-  pr_debug("New current->thread.uie: %s\n",
+  pr_info("New current->thread.uie: %s\n",
 	   current->thread.uie != 0 ? "ON" : "OFF");
 
   pr_info("New SEDELEG: 0x" REG_FMT "\n", csr_read(CSR_SEDELEG));
   pr_info("New pt_regs->SEDELEG: 0x" REG_FMT "\n", regs->sedeleg);
+  pr_info("New current->thread.sedeleg: 0x" REG_FMT "\n",
+	   current->thread.sedeleg);
 
   return 0;
 }
@@ -90,20 +98,20 @@ int ioctl_handle_kbe_page_fault(struct pt_regs *real_regs,
      * In particular, we need to set the CAUSE to the right kind of page fault,
      * make the system believe we are coming from user-space, and install the
      * bad address we got. */
-    pr_info("Handling KBE Page fault request for user vaddr 0x" REG_FMT "\n",
+    pr_debug("Handling KBE Page fault request for user vaddr 0x" REG_FMT "\n",
 	    (long unsigned)fault.fault_vaddr);
 
-    pr_info("SEPC: 0x" REG_FMT " (where we called ioctl from)\n", csr_read(CSR_SEPC));
-    pr_info("UCAUSE: 0x" REG_FMT "\n", csr_read(CSR_UCAUSE));
-    pr_info("UEPC: 0x" REG_FMT " (insn that made KBE'd page fault)\n", csr_read(CSR_UEPC));
-    pr_info("UTVAL: 0x" REG_FMT "\n", csr_read(CSR_UTVAL));
-    pr_info("SSTATUS: 0x" REG_FMT "\n", csr_read(CSR_STATUS));
+    pr_debug("SEPC: 0x" REG_FMT " (where we called ioctl from)\n", csr_read(CSR_SEPC));
+    pr_debug("UCAUSE: 0x" REG_FMT "\n", csr_read(CSR_UCAUSE));
+    pr_debug("UEPC: 0x" REG_FMT " (insn that made KBE'd page fault)\n", csr_read(CSR_UEPC));
+    pr_debug("UTVAL: 0x" REG_FMT "\n", csr_read(CSR_UTVAL));
+    pr_debug("SSTATUS: 0x" REG_FMT "\n", csr_read(CSR_STATUS));
+    pr_debug("current->thread.sedeleg: 0x" REG_FMT "\n", current->thread.sedeleg);
 
-    pr_info("What the user told us:\n");
-    pr_info("fault.kind = %d\n", fault.kind);
-    pr_info("fault.epc = 0x" REG_FMT "\n",
-	    (unsigned long)fault.epc);
-    pr_info("fault.fault_vaddr = 0x" REG_FMT "\n",
+    pr_debug("What the user told us:\n");
+    pr_debug("fault.kind = %d\n", fault.kind);
+    pr_debug("fault.epc = 0x" REG_FMT "\n", (unsigned long)fault.epc);
+    pr_debug("fault.fault_vaddr = 0x" REG_FMT "\n",
 	    (long unsigned)fault.fault_vaddr);
 
     const long unsigned kern_addrs_mask = 0xffffff8000000000UL;
@@ -128,15 +136,15 @@ int ioctl_handle_kbe_page_fault(struct pt_regs *real_regs,
     switch(fault.kind) {
     case CODE:
 	fake_regs.cause = EXC_INST_PAGE_FAULT;
-	pr_info("Handling Code/INSTruction page fault\n");
+	pr_debug("Handling Code/INSTruction page fault\n");
 	break;
     case LOAD:
 	fake_regs.cause = EXC_LOAD_PAGE_FAULT;
-	pr_info("Handling LOAD page fault request\n");
+	pr_debug("Handling LOAD page fault request\n");
 	break;
     case STORE:
 	fake_regs.cause = EXC_STORE_PAGE_FAULT;
-	pr_info("Handling STORE page fault request\n");
+	pr_debug("Handling STORE page fault request\n");
 	break;
     default:
 	die(&fake_regs, "Unknown type of KBE page fault request!");
@@ -146,20 +154,18 @@ int ioctl_handle_kbe_page_fault(struct pt_regs *real_regs,
     // Explicitly denote that the previous privilege mode was user-mode.
     fake_regs.status &= SR_UPP;
 
-    show_regs(&fake_regs);
-
-    pr_info("Handling page fault by calling do_page_fault\n");
+    pr_debug("Handling page fault by calling do_page_fault\n");
     do_page_fault(&fake_regs);
-    pr_info("do_page_fault completed!\n");
+    pr_debug("do_page_fault completed!\n");
 
-    pr_info("SEPC: 0x" REG_FMT " (should be where we called ioctl from)\n", csr_read(CSR_SEPC));
-    pr_info("UCAUSE: 0x" REG_FMT "\n", csr_read(CSR_UCAUSE));
-    pr_info("UEPC: 0x" REG_FMT " (insn that made KBE'd page fault)\n", csr_read(CSR_UEPC));
-    pr_info("UTVAL: 0x" REG_FMT "\n", csr_read(CSR_UTVAL));
-    pr_info("SSTATUS: 0x" REG_FMT "\n", csr_read(CSR_STATUS));
+    pr_debug("SEPC: 0x" REG_FMT " (should be where we called ioctl from)\n", csr_read(CSR_SEPC));
+    pr_debug("UCAUSE: 0x" REG_FMT "\n", csr_read(CSR_UCAUSE));
+    pr_debug("UEPC: 0x" REG_FMT " (insn that made KBE'd page fault)\n", csr_read(CSR_UEPC));
+    pr_debug("UTVAL: 0x" REG_FMT "\n", csr_read(CSR_UTVAL));
+    pr_debug("SSTATUS: 0x" REG_FMT "\n", csr_read(CSR_STATUS));
+    pr_debug("current->thread.sedeleg: 0x" REG_FMT "\n", current->thread.sedeleg);
 
-    show_regs(&fake_regs);
-    pr_info("Exiting KBE page fault request ioctl handler\n");
+    pr_debug("Exiting KBE page fault request ioctl handler\n");
     return 0;
 }
 

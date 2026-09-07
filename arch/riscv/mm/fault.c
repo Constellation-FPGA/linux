@@ -95,11 +95,11 @@ bad_area_nosemaphore(struct pt_regs *regs, int code, unsigned long addr)
 	 */
 	/* User mode accesses just cause a SIGSEGV */
 	if (user_mode(regs)) {
-		pr_warn("Page fault for badaddr=0x" REG_FMT " from inst @ 0x" REG_FMT " turning into signal\n",
-			regs->badaddr, regs->epc);
-		pr_warn("UCAUSE: 0x" REG_FMT "\n", csr_read(CSR_UCAUSE));
-		pr_warn("UTVAL: 0x" REG_FMT "\n", csr_read(CSR_UTVAL));
-		pr_warn("UEPC: 0x" REG_FMT "\n", csr_read(CSR_UEPC));
+		pr_debug("Page fault for badaddr=0x" REG_FMT " from inst @ 0x" REG_FMT " turning into signal\n",
+			 regs->badaddr, regs->epc);
+		pr_debug("UCAUSE: 0x" REG_FMT "\n", csr_read(CSR_UCAUSE));
+		pr_debug("UTVAL: 0x" REG_FMT "\n", csr_read(CSR_UTVAL));
+		pr_debug("UEPC: 0x" REG_FMT "\n", csr_read(CSR_UEPC));
 		do_trap(regs, SIGSEGV, code, addr);
 		return;
 	}
@@ -317,8 +317,8 @@ void handle_page_fault(struct pt_regs *regs)
 	count_vm_vma_lock_event(VMA_LOCK_RETRY);
 
 	if (fault_signal_pending(fault, regs)) {
-		pr_warn("Page fault for badaddr=0x" REG_FMT " turning into signal\n",
-			regs->badaddr);
+		pr_debug("Page fault for badaddr=0x" REG_FMT " turning into signal\n",
+			 regs->badaddr);
 		if (!user_mode(regs))
 			no_context(regs, addr);
 		return;

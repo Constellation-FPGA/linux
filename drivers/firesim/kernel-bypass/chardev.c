@@ -68,10 +68,10 @@ static long kernel_bypass_ioctl(struct file *filep, unsigned int cmd, unsigned l
 
   /* TODO: Dump all of pt_regs in hex somehow. */
   struct pt_regs *regs = task_pt_regs(current);
-  pr_info("================================================================\n");
-  pr_info("Before ioctl SEPC: " REG_FMT "\n", csr_read(CSR_EPC));
-  pr_info("Before ioctl pt_regs->epc: " REG_FMT "\n", regs->epc);
-  pr_info("pt_regs addr: 0x%016lx\n", (unsigned long)regs);
+  pr_debug("================================================================\n");
+  pr_debug("Before ioctl SEPC: " REG_FMT "\n", csr_read(CSR_EPC));
+  pr_debug("Before ioctl pt_regs->epc: " REG_FMT "\n", regs->epc);
+  pr_debug("pt_regs addr: 0x%016lx\n", (unsigned long)regs);
 
   long ret = -ENOTTY;
   switch(cmd) {
@@ -99,12 +99,11 @@ static long kernel_bypass_ioctl(struct file *filep, unsigned int cmd, unsigned l
     pr_info("Going to %s SEDELEG bits\n", trap_setup.en_flag ? "SET" : "CLEAR");
     show_regs(regs);
     ret = ioctl_delegate_traps(regs, trap_setup);
-    show_regs(regs);
     break;
   }
   case KERNEL_BYPASS_HANDLE_PAGE_FAULT: {
       struct kbe_page_fault_t page_fault;
-      pr_info("Handling page fault\n");
+      pr_debug("Handling page fault\n");
       ret = copy_from_user(&page_fault, (struct kbe_page_fault_t*) args,
 			   sizeof(struct kbe_page_fault_t));
       if (ret) {
@@ -139,12 +138,13 @@ static long kernel_bypass_ioctl(struct file *filep, unsigned int cmd, unsigned l
     break;
   }
 
-  pr_info("After ioctl SEPC: " REG_FMT "\n", csr_read(CSR_EPC));
-  pr_info("After ioctl pt_regs->epc: " REG_FMT "\n", regs->epc);
+  pr_debug("After ioctl SEPC: " REG_FMT "\n", csr_read(CSR_EPC));
+  pr_debug("After ioctl pt_regs->epc: " REG_FMT "\n", regs->epc);
   pr_debug("After ioctl current->thread.uie: %s\n",
 	   current->thread.uie != 0 ? "ON" : "OFF");
   pr_debug("After ioctl SEDELEG: " REG_FMT "\n", current->thread.sedeleg);
-  pr_info("Finished ioctl! Returning to: 0x" REG_FMT "\n",
+  pr_debug("After ioctl SIDELEG: " REG_FMT "\n", csr_read(CSR_SIDELEG));
+  pr_debug("Finished ioctl! Returning to: 0x" REG_FMT "\n",
 	  regs->epc);
   return ret;
 }
