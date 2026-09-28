@@ -452,6 +452,7 @@
 #endif /* !CONFIG_RISCV_M_MODE */
 
 /* Floating-Point Exceptions CSRs */
+#define CSR_FCSR 0x003
 #define CSR_FFLAGS_CARE 0x880
 #define FFLAGS_CLEAR 0x1F
 
