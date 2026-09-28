@@ -33,14 +33,6 @@
 SYM_CODE_START(handle_exception)
 	CYCLES_TO_USSCRATCH
 
-	/* KBE Errata: Hardware will let a fault in the kernel be delivered as
-	 * a KBE back to userspace. SR_UIE is the gate to enable/disable KBEs.
-	 * Turn off KBEs upon entrance to the kernel.
-	 * thread_struct is changed when KBEs are enabled/disabled so
-	 * unconditionally clearing it here is fine. */
-	csrci CSR_STATUS, SR_UIE
-	csrw CSR_SEDELEG, zero
-
 	/*
 	 * If coming from userspace, preserve the user thread pointer and load
 	 * the kernel thread pointer.  If we came from the kernel, the scratch
@@ -70,8 +62,6 @@ _save_context:
 	REG_S x5,  PT_T0(sp)
 	save_from_x6_to_x31
 
-	li t0, 0
-
 	/* HACK: If [MS]STATUS.FS states that FP support is either off or
 	 * initializing, then we should not save any FP state, since FP support may
 	 * not have been turned on yet. In this case, the and-mask will only keep
@@ -95,12 +85,6 @@ _save_context:
 	frcsr x31
 	REG_S x31, PT_FCSR(sp)
 
-	/*
-	 * Disable Kernel-Bypass Exceptions (KBEs) when inside the kernel, as a
-	 * sanity barrier.
-	 *
-	 * Disable KBEs by clearing the "chicken bit" in SSTATUS. */
-	ori t0, t0, SR_UIE
 boot_runtime_xcpt:
 	/*
 	 * Disable user-mode memory access as it should only be set in the
@@ -109,8 +93,7 @@ boot_runtime_xcpt:
 	 * Disable the FPU/Vector to detect illegal usage of floating point
 	 * or vector in kernel space.
 	 */
-	li s2, SR_SUM | SR_FS_VS
-	or t0, t0, s2
+	li t0, SR_SUM | SR_FS_VS
 
 	REG_L s0, TASK_TI_USER_SP(tp)
 	csrrc s1, CSR_STATUS, t0
@@ -203,29 +186,6 @@ SYM_CODE_START_NOALIGN(ret_from_exception)
 	 */
 	csrw CSR_SCRATCH, tp
 
-	/* Needs to be done before restoring CSR_STATUS, because UIE might be
-	 * set by writing the CSR, enabling KBEs. We better have something
-	 * sensible in hardware by that point, or we are not going to have a
-	 * good time. */
-	REG_L s0, PT_STARGET(sp)
-	REG_L s2, PT_SIDELEG(sp)
-	csrw CSR_STARGET, s0
-	csrw CSR_SIDELEG, s2
-
-	/* The fact that UIE is set (enabling KBEs) is stored in the task's
-	 * thread_struct, which is preserved across all exceptions. So if the
-	 * user enables them in the KBE ioctl, they stay enabled until the user
-	 * explicitly disables them. We just keep reloading it and putting it
-	 * back into UIE. */
-	li t0, TASK_THREAD_RA
-	add t0, tp, t0
-	REG_L s0, TASK_THREAD_SEDELEG_RA(t0)
-	csrw CSR_SEDELEG, s0
-	REG_L s1, TASK_THREAD_UIE_RA(t0)
-	beqz s1, 1f // If UIE is false/unset/0, skip setting & saving it
-	REG_L s0, PT_STATUS(sp)
-	ori s0, s0, SR_UIE
-	REG_S s0, PT_STATUS(sp)
 1:
 	REG_L a0, PT_STATUS(sp)
 	/*
@@ -409,6 +369,8 @@ SYM_FUNC_START(__switch_to)
 	REG_S s11, TASK_THREAD_S11_RA(a3)
 
 	/* Save prev proc's kernel-bypass info */
+	csrr s11, CSR_SEDELEG
+	REG_S s11, TASK_THREAD_SEDELEG_RA(a3) ;
 	csrr s11, CSR_SIDELEG
 	REG_S s11, TASK_THREAD_SIDELEG_RA(a3) ;
 	csrr s11, CSR_STARGET
@@ -433,6 +395,8 @@ SYM_FUNC_START(__switch_to)
 	/* Restore context from next->thread */
 
 	/* Restore next proc's kernel-bypass info */
+	REG_L s11, TASK_THREAD_SEDELEG_RA(a4) ;
+	csrw CSR_SEDELEG, s11
 	REG_L s11, TASK_THREAD_SIDELEG_RA(a4) ;
 	csrw CSR_SIDELEG, s11
 	REG_L s11, TASK_THREAD_STARGET_RA(a4) ;
