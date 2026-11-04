@@ -26,6 +26,7 @@ DECLARE_DO_ERROR_INFO(do_trap_ecall_m);
 DECLARE_DO_ERROR_INFO(do_trap_break);
 DECLARE_DO_ERROR_INFO(do_trap_floating_point);
 DECLARE_DO_ERROR_INFO(do_trap_step);
+DECLARE_DO_ERROR_INFO(do_handle_fault);
 
 asmlinkage unsigned long get_overflow_stack(void);
 asmlinkage void handle_bad_stack(struct pt_regs *regs);

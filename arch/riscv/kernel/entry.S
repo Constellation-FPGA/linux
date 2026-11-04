@@ -475,6 +475,7 @@ SYM_CODE_START(excp_vect_table)
 	 * ESTEP to be pipeline delegated, allowing for faster "breakpoint"-like
 	 * behavior. */
 	RISCV_PTR do_trap_step
+	RISCV_PTR do_handle_fault   /* handle fault */
 excp_vect_table_end:
 SYM_CODE_END(excp_vect_table)
 

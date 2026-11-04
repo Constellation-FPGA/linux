@@ -111,6 +111,7 @@
 #define EXC_STORE_GUEST_PAGE_FAULT	23
 #define EXC_FLOATING_POINT_FAULT 24
 #define EXC_INST_STEP 25 // ESTEP
+#define EXC_HANDLE_FAULT	26
 
 /* PMP configuration */
 #define PMP_R			0x01

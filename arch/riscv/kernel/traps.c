@@ -401,6 +401,17 @@ asmlinkage __visible noinstr void do_page_fault(struct pt_regs *regs)
 }
 #endif
 
+asmlinkage __visible noinstr void do_handle_fault(struct pt_regs *regs)
+{
+	irqentry_state_t state = irqentry_enter(regs);
+
+	handle_handle_fault(regs);
+
+	local_irq_disable();
+
+	irqentry_exit(regs, state);
+}
+
 static void noinstr handle_riscv_irq(struct pt_regs *regs)
 {
 	struct pt_regs *old_regs;
