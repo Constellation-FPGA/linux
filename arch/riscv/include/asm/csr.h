@@ -468,6 +468,12 @@
 #define CSR_SALREADY_HANDLING 0x5C1
 #define CSR_UALREADY_HANDLING 0x845
 
+/* Handle Translation CSRs */
+#define CSR_HTBASE	0x0c2
+#define CSR_HTDUMP	0x0c3
+#define CSR_HTINVAL	0x0c4
+#define CSR_HTSIZE	0x0c5
+
 /* IE/IP (Supervisor/Machine Interrupt Enable/Pending) flags */
 #define IE_SIE		(_AC(0x1, UL) << RV_IRQ_SOFT)
 #define IE_TIE		(_AC(0x1, UL) << RV_IRQ_TIMER)
