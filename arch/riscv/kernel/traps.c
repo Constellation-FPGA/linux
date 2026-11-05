@@ -403,13 +403,17 @@ asmlinkage __visible noinstr void do_page_fault(struct pt_regs *regs)
 
 asmlinkage __visible noinstr void do_handle_fault(struct pt_regs *regs)
 {
-	irqentry_state_t state = irqentry_enter(regs);
-
-	handle_handle_fault(regs);
-
-	local_irq_disable();
-
-	irqentry_exit(regs, state);
+	if (user_mode(regs)) {
+		irqentry_enter_from_user_mode(regs);
+		do_trap_error(regs, SIGSEGV, SEGV_ACCERR, regs->badaddr,
+			      "Oops - handle fault");
+		irqentry_exit_to_user_mode(regs);
+	} else {
+		irqentry_state_t state = irqentry_nmi_enter(regs);
+		do_trap_error(regs, SIGSEGV, SEGV_ACCERR, regs->badaddr,
+			      "Oops - handle fault");
+		irqentry_nmi_exit(regs, state);
+	}
 }
 
 static void noinstr handle_riscv_irq(struct pt_regs *regs)
