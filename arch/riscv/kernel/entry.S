@@ -394,8 +394,6 @@ SYM_FUNC_START(__switch_to)
 	REG_S s11, TASK_THREAD_S11_RA(a3)
 
 	/* Save prev proc's kernel-bypass info */
-	csrr s11, CSR_SEDELEG
-	REG_S s11, TASK_THREAD_SEDELEG_RA(a3) ;
 	csrr s11, CSR_SIDELEG
 	REG_S s11, TASK_THREAD_SIDELEG_RA(a3) ;
 	csrr s11, CSR_STARGET
@@ -420,8 +418,6 @@ SYM_FUNC_START(__switch_to)
 	/* Restore context from next->thread */
 
 	/* Restore next proc's kernel-bypass info */
-	REG_L s11, TASK_THREAD_SEDELEG_RA(a4) ;
-	csrw CSR_SEDELEG, s11
 	REG_L s11, TASK_THREAD_SIDELEG_RA(a4) ;
 	csrw CSR_SIDELEG, s11
 	REG_L s11, TASK_THREAD_STARGET_RA(a4) ;
