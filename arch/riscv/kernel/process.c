@@ -136,8 +136,10 @@ void start_thread(struct pt_regs *regs, unsigned long pc,
 	regs->epc = pc;
 	regs->sp = sp;
 	regs->status &= ~SR_UIE;
+	current->thread.uie = 0;
 	regs->starget = 0;
 	regs->sedeleg = 0;
+	current->thread.sedeleg = 0;
 	regs->sideleg = 0;
 
 #ifdef CONFIG_64BIT
@@ -171,8 +173,10 @@ void flush_thread(void)
 	/* Reset KBE state on process fork */
 	struct pt_regs *regs = task_pt_regs(current);
 	regs->status &= ~SR_UIE;
+	current->thread.uie = 0;
 	regs->starget = 0;
 	regs->sedeleg = 0;
+	current->thread.sedeleg = 0;
 	regs->sideleg = 0;
 }
 
