@@ -186,6 +186,31 @@ SYM_CODE_START_NOALIGN(ret_from_exception)
 	 */
 	csrw CSR_SCRATCH, tp
 
+	/* Needs to be done before restoring CSR_STATUS, because UIE might be
+	 * set by writing the CSR, enabling KBEs. We better have something
+	 * sensible in hardware by that point, or we are not going to have a
+	 * good time. */
+	REG_L s0, PT_STARGET(sp)
+	REG_L s2, PT_SIDELEG(sp)
+	csrw CSR_STARGET, s0
+	csrw CSR_SIDELEG, s2
+
+	/* Restore the exception delegation register. */
+	li t0, TASK_THREAD_RA
+	add t0, tp, t0
+	REG_L s0, TASK_THREAD_SEDELEG_RA(t0)
+	csrw CSR_SEDELEG, s0
+
+	/* The fact that UIE is set (enabling KBEs) is stored in the task's
+	 * thread_struct, which is preserved across all exceptions. So if the
+	 * user enables them in the KBE ioctl, they stay enabled until the user
+	 * explicitly disables them. We just keep reloading it and putting it
+	 * back into UIE. */
+	REG_L s1, TASK_THREAD_UIE_RA(t0)
+	REG_L s0, PT_STATUS(sp)
+	or s0, s0, s1
+	REG_S s0, PT_STATUS(sp)
+
 1:
 	REG_L a0, PT_STATUS(sp)
 	/*
