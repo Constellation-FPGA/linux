@@ -117,7 +117,7 @@ static long kernel_bypass_ioctl(struct file *filep, unsigned int cmd, unsigned l
   }
   case KERNEL_BYPASS_IOCTL_TIME: {
       struct kbe_ioctl_time_t times = { 0 };
-      pr_info("Doing ioctl time measurement\n");
+      pr_debug("Doing ioctl time measurement\n");
       ioctl_handle_time(&times);
       ret = copy_to_user((struct kbe_ioctl_time_t*) args, &times,
 			 sizeof(struct kbe_ioctl_time_t));
